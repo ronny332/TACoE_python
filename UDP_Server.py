@@ -15,7 +15,7 @@ class UDP_Server(threading.Thread):
 
     @staticmethod
     def getInstance():
-        """ Static access method. """
+        """Static access method for UDP_Server """
         if UDP_Server.__instance is None:
             UDP_Server()
         return UDP_Server.__instance
@@ -35,6 +35,8 @@ class UDP_Server(threading.Thread):
         logging.debug('UDP server initiated')
 
     def run(self):
+        """run the UDP_Server thread
+        """
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('', self.udp_port))
 

@@ -16,6 +16,11 @@ class CoE_Frame(object):
         self.payload = payload
 
     def __str__(self):
+        """string representation of payload
+
+        Returns:
+            string: string representation
+        """
         return ''.join(['%(num)2x/%(num)-3d ' % {'num': int(p)} for p in self.payload])
 
     def getNode(self):
