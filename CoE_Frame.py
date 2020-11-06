@@ -18,7 +18,7 @@ class CoE_Frame(object):
 
         self.payload = payload
 
-        logging.debug(f'CoE frame {self.str()}')
+        logging.debug(f'CoE frame {self.getString()}')
 
     def __str__(self):
         """string representation of payload
@@ -26,7 +26,7 @@ class CoE_Frame(object):
         Returns:
             string: string representation
         """
-        return self.str()
+        return self.getString()
 
     def getNode(self):
         """first byte of self.payload is node number
@@ -37,13 +37,18 @@ class CoE_Frame(object):
 
         return int(self.payload[0])
 
-    def str(self):
+    def getString(self):
+        """create string representation of self.payload
+
+        Returns:
+            string: from self.payload
+        """
         return ''.join(map(
-            lambda p, i: '[b%(i)d:%(p)02xh/%(p)03dd]'
+            lambda p, i: '[b%(i)d:%(p)02xh|%(p)03dd]'
             % {'i': i, 'p': int(p)},
             self.payload,
             range(self.rawdataLength)
         ))
 
-    def getValue(self, index, type):
+    def getValue(self, index):
         pass
