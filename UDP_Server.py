@@ -49,5 +49,3 @@ class UDP_Server(threading.Thread):
                                  f'{self.frames[-1]}')
                 except TypeError as type_error:
                     logging.error(type_error)
-
-                print(self.frames[-1].getNode())

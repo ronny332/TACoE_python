@@ -1,4 +1,5 @@
 import logging
+from CoE_Types import CoE_Types as CoE_Types
 
 
 class CoE_Frame(object):
@@ -7,13 +8,18 @@ class CoE_Frame(object):
     """
 
     rawdataLength = 14
+    types = CoE_Types.getInstance()
 
     def __init__(self, payload):
+        super().__init__()
+
         if not isinstance(payload, bytes) or len(payload) != self.rawdataLength:
             raise TypeError('invalid type or wrong length of raw data.')
 
-        logging.debug('got new raw CoE frame: {}'.format(str(payload)))
+        logging.debug('new raw CoE frame: {}'.format(str(payload)))
         self.payload = payload
+
+        logging.debug('Frame initialized')
 
     def __str__(self):
         """string representation of payload
@@ -29,4 +35,10 @@ class CoE_Frame(object):
         Returns:
             int: node number
         """
+
+        print()
+
         return int(self.payload[0])
+
+    def getValue(self, index, type):
+        pass
