@@ -45,7 +45,5 @@ class UDP_Server(threading.Thread):
                 try:
                     frame = CoE_Frame(data)
                     self.frames.append(frame)
-                    logging.info(f'created new frame ({CoE_Frame.rawdataLength} bytes): ' +
-                                 f'{self.frames[-1]}')
                 except TypeError as type_error:
                     logging.error(type_error)

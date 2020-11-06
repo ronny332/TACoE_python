@@ -16,10 +16,9 @@ class CoE_Frame(object):
         if not isinstance(payload, bytes) or len(payload) != self.rawdataLength:
             raise TypeError('invalid type or wrong length of raw data.')
 
-        logging.debug('new raw CoE frame: {}'.format(str(payload)))
         self.payload = payload
 
-        logging.debug('Frame initialized')
+        logging.debug(f'CoE frame {self.str()}')
 
     def __str__(self):
         """string representation of payload
@@ -27,7 +26,7 @@ class CoE_Frame(object):
         Returns:
             string: string representation
         """
-        return ''.join(['%(num)2x/%(num)-3d ' % {'num': int(p)} for p in self.payload])
+        return self.str()
 
     def getNode(self):
         """first byte of self.payload is node number
@@ -36,9 +35,15 @@ class CoE_Frame(object):
             int: node number
         """
 
-        print()
-
         return int(self.payload[0])
+
+    def str(self):
+        return ''.join(map(
+            lambda p, i: '[b%(i)d:%(p)02xh/%(p)03dd]'
+            % {'i': i, 'p': int(p)},
+            self.payload,
+            range(self.rawdataLength)
+        ))
 
     def getValue(self, index, type):
         pass
