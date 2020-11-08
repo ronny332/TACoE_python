@@ -5,7 +5,6 @@ import threading
 
 from CoE_Frame import CoE_Frame
 
-
 class UDP_Server(threading.Thread):
     """
     listen on port 5441 and receives 14 byte CoE UDP packets and stores them into a FIFO queue

@@ -2,6 +2,7 @@ import logging
 from time import time
 
 from CoE_Types import CoE_Types as CoE_Types
+from config import config as config
 
 #
 #  Data Frame Scheme:
@@ -14,7 +15,7 @@ class CoE_Frame(object):
     stores and handles CoE raw data, received from an UDP call
     """
 
-    digitalHighLevel = 0b1001  # 0x09
+    highMapping = 0b1001  # 0x09
     rawdataLength = 14
     types = CoE_Types.getInstance()
 
@@ -27,7 +28,7 @@ class CoE_Frame(object):
         self.payload = payload
         self.timestamp = time()
 
-        logging.debug(f'CoE frame {self.getString()}')
+        logging.debug(f'CoE frame {self.getString(config["debug"]["long"])}')
 
     def __str__(self):
         """string representation of payload
@@ -35,48 +36,71 @@ class CoE_Frame(object):
         Returns:
             string: string representation
         """
-        return self.getString()
+        return self.getString(False)
 
-    def getAnalogueValue(self, index):
+    def getAnalogue(self, index):
         """generate (raw) analogue values from 2 8 bit represenations at index (1-4), read as 16LE
         no precision or conversation in done, do this with the matching type details
 
         Args:
             index (int): values from 1 to 4
 
-        Raises:
-            ValueError: index needs values between 1 and 4
-
         Returns:
-            tuple: (node number as integer, value number as integer, 16bit LittleEndian representation of value at index, type as integer, timestamp of creation)
+            tuple: (node number as integer, index number as integer, 16bit LittleEndian representation of value at index, type as integer, timestamp of creation)
         """
         if index not in range(1, 5):
             raise ValueError('only indexes between 1 and 4 are valid')
 
-        return (self.getNode(), self.getValueNumber(index), self.payload[index * 2 + 1] << 8 | self.payload[index * 2], self.payload[9 + index], self.timestamp)
+        return (self.getNode(), self.getIndex(index, True), self.payload[index * 2 + 1] << 8 | self.payload[index * 2], self.payload[9 + index], self.timestamp)
 
-    def getDigitalValue(self, index):
-        if index not in range(1, 33):
-            raise ValueError('index has to be within range of 1 to 32')
-        if index > 16:
-            index -= 16
+    def getDigital(self, index):
+        """get digital boolean value for index.
+        index gets recalculated for result tuple.
+        if index is in range of 1 to 16 and result index is in "high level" the index is index + 16
+        if index is in range of 17 to 32 and result index is in "low level" the index is index - 16
 
-        indexAsBits = 1 << index - 1
+        Args:
+            index (index): index for value (1-32)
+
+        Returns:
+            tuple: (node number as integer, index number as integer, value of index as boolean, timestamp of creation)
+        """
+        index = self.getIndex(index, False)
+
+        indexAsBits = 1 << ((index - 1) % 16)
         num = self.payload[3] << 8 | self.payload[2]
-
-        if self.isDigitalHighLevel():
-            index += 16
 
         return (self.getNode(), index, num & indexAsBits == indexAsBits, self.timestamp)
 
     def getFrame(self):
-        """second byte of self.payload is frame number, don't use on digital frame data
+        """second byte of self.payload is frame number, don't use on digital frame data.
 
         Returns:
             int: frame number
         """
 
         return int(self.payload[1])
+
+    def getIndex(self, index, analogue=True):
+        """get the value number (position) as integer (1-32)
+
+        Args:
+            index (int): index in frame (1-4 for analoge values, 1-32 for digital)
+
+        Returns:
+            int: value from 1 to 16
+        """
+        if index not in range(1, 33):
+            raise ValueError('index has to be within range of 1 to 32')
+
+        if analogue:
+            return (self.getFrame() - 1) * 4 + index
+        else:
+            if index > 16:
+                index -= 16
+            if self.isMapped():
+                index += 16
+            return index
 
     def getNode(self):
         """first byte of self.payload is node number
@@ -87,7 +111,7 @@ class CoE_Frame(object):
 
         return int(self.payload[0])
 
-    def getString(self):
+    def getString(self, long=False):
         """create string representation of self.payload
 
         Returns:
@@ -100,63 +124,67 @@ class CoE_Frame(object):
         #     print(self.getAnalogueValue(3))
         #     print(self.getAnalogueValue(4))
 
-        if self.getNode() in [55, 56, 57, 58, 59, 60]:
-            print(self.getDigitalValue(1))
-            print(self.getDigitalValue(2))
-            print(self.getDigitalValue(3))
-            print(self.getDigitalValue(4))
-            print(self.getDigitalValue(5))
-            print(self.getDigitalValue(6))
-            print(self.getDigitalValue(7))
-            print(self.getDigitalValue(8))
-            print(self.getDigitalValue(9))
-            print(self.getDigitalValue(10))
-            print(self.getDigitalValue(11))
-            print(self.getDigitalValue(12))
-            print(self.getDigitalValue(13))
-            print(self.getDigitalValue(14))
-            print(self.getDigitalValue(15))
-            print(self.getDigitalValue(16))
-            print(self.getDigitalValue(17))
-            print(self.getDigitalValue(18))
-            print(self.getDigitalValue(19))
-            print(self.getDigitalValue(20))
-            print(self.getDigitalValue(21))
-            print(self.getDigitalValue(22))
-            print(self.getDigitalValue(23))
-            print(self.getDigitalValue(24))
-            print(self.getDigitalValue(25))
-            print(self.getDigitalValue(26))
-            print(self.getDigitalValue(27))
-            print(self.getDigitalValue(28))
-            print(self.getDigitalValue(29))
-            print(self.getDigitalValue(30))
-            print(self.getDigitalValue(31))
-            print(self.getDigitalValue(32))
+        # if self.getNode() in [55, 56, 57, 58, 59, 60]:
+        #     print(self.getDigitalValue(1))
+        #     print(self.getDigitalValue(2))
+        #     print(self.getDigitalValue(3))
+        #     print(self.getDigitalValue(4))
+        #     print(self.getDigitalValue(5))
+        #     print(self.getDigitalValue(6))
+        #     print(self.getDigitalValue(7))
+        #     print(self.getDigitalValue(8))
+        #     print(self.getDigitalValue(9))
+        #     print(self.getDigitalValue(10))
+        #     print(self.getDigitalValue(11))
+        #     print(self.getDigitalValue(12))
+        #     print(self.getDigitalValue(13))
+        #     print(self.getDigitalValue(14))
+        #     print(self.getDigitalValue(15))
+        #     print(self.getDigitalValue(16))
+        #     print(self.getDigitalValue(17))
+        #     print(self.getDigitalValue(18))
+        #     print(self.getDigitalValue(19))
+        #     print(self.getDigitalValue(20))
+        #     print(self.getDigitalValue(21))
+        #     print(self.getDigitalValue(22))
+        #     print(self.getDigitalValue(23))
+        #     print(self.getDigitalValue(24))
+        #     print(self.getDigitalValue(25))
+        #     print(self.getDigitalValue(26))
+        #     print(self.getDigitalValue(27))
+        #     print(self.getDigitalValue(28))
+        #     print(self.getDigitalValue(29))
+        #     print(self.getDigitalValue(30))
+        #     print(self.getDigitalValue(31))
+        #     print(self.getDigitalValue(32))
 
-        return ''.join(map(
-            lambda p, i: '[b%(i)d:%(p)02xh|%(p)03dd] '
-            % {'i': i, 'p': int(p)},
-            self.payload,
-            range(self.rawdataLength)
-        ))
+        if long:
+            return ''.join(map(
+                lambda p, i: '[b%(i)d:%(p)02xh|%(p)03dd] '
+                % {'i': i, 'p': int(p)},
+                self.payload,
+                range(self.rawdataLength)
+            ))
+        else:
+            return ''.join(map(
+                lambda p, i: '[%(p)02xh]'
+                % {'p': int(p)},
+                self.payload,
+                range(self.rawdataLength)
 
-    def getValueNumber(self, index):
-        """get the value number (position) as integer (1-16)
+            ))
 
-        Args:
-            index (int): index in frame (1-4)
+    def isMapped(self):
+        """return False for first value mapping, True for second value mapping
+        digital mapping 0x0/low = value 1-16, level 0x9/high = value 17-32
 
-        Returns:
-            int: value from 1 to 16
-        """
-        return self.getFrame() * 4 + index
+        Summary: TA stores digital values in only 16 bits packet space.
+        To make 32 values possible, they map the values 17 to 32 by setting the
+        second byte of each paket to 0x9, what means "high". Low is 0x0.
 
-    def isDigitalHighLevel(self):
-        """return False for first value level, True for second value level
-        digital level low = value 1-16, lovel high = value 17-32
+        Use this method only on digital frames.
 
         Returns:
             boolean: False = low/1st value level, True = high/2nd value level
         """
-        return self.payload[1] == self.digitalHighLevel
+        return self.payload[1] == self.highMapping
