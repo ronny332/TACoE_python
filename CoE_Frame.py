@@ -68,7 +68,7 @@ class CoE_Frame(object):
         return (self.getNode(), self.getIndex(index, True), self.payload[index * 2 + 1] << 8 | self.payload[index * 2], self.payload[9 + index], self.timestamp)
 
     def getDigital(self, index):
-        """get digital boolean value for index.
+        """get digital bool value for index.
         index gets recalculated for result tuple.
         if index is in range of 1 to 16 and result index is in "high level" the index is index + 16
         if index is in range of 17 to 32 and result index is in "low level" the index is index - 16
@@ -77,7 +77,7 @@ class CoE_Frame(object):
             index (index): index for value (1-32)
 
         Returns:
-            tuple: (node number as integer, index number as integer, value of index as boolean, timestamp of creation)
+            tuple: (node number as integer, index number as integer, value of index as bool, timestamp of creation)
         """
         index = self.getIndex(index, False)
 
@@ -194,7 +194,7 @@ class CoE_Frame(object):
         analogue frames have a number of 1,2,3 or 4.
 
         Returns:
-            boolean: data is analogue or not
+            bool: data is analogue or not
         """
         return self.payload[1] in range(1, 5)
 
@@ -203,7 +203,7 @@ class CoE_Frame(object):
         digital frames have a number of 0 or 9.
 
         Returns:
-            boolean: data is digital or not
+            bool: data is digital or not
         """
         return not self.isAnalogue()
 
@@ -218,6 +218,6 @@ class CoE_Frame(object):
         Use this method only on digital frames.
 
         Returns:
-            boolean: False = low/1st value level, True = high/2nd value level
+            bool: False = low/1st value level, True = high/2nd value level
         """
         return self.payload[1] == self.highMapping
