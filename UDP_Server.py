@@ -5,12 +5,17 @@ import threading
 
 from CoE_Frame import CoE_Frame
 
+from config import config
+
 class UDP_Server(threading.Thread):
     """
     listen on port 5441 and receives 14 byte CoE UDP packets and stores them into a FIFO queue
     """
 
     __instance = None
+
+    frames = deque(maxlen=config["udp_server"]["fifo_length"])
+    udp_port = config["udp_server"]["udp_port"]
 
     @staticmethod
     def getInstance():
@@ -27,11 +32,15 @@ class UDP_Server(threading.Thread):
         else:
             UDP_Server.__instance = self
 
-        self.fifo_length = 100
-        self.frames = deque(maxlen=self.fifo_length)
-        self.udp_port = 5441
+        logging.debug(f'UDP server initiated with fifo size of {self.frames.maxlen} frames, listening on UDP port {self.udp_port}')
 
-        logging.debug('UDP server initiated')
+    def getFrames(self):
+        """return frames object
+
+        Returns:
+            queue: frames object
+        """
+        return self.frames
 
     def run(self):
         """run the UDP_Server thread

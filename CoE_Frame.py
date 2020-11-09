@@ -1,8 +1,11 @@
+import asyncio
+import datetime
 import logging
+import sys
 from time import time
 
-from CoE_Types import CoE_Types as CoE_Types
 from config import config as config
+from CoE_Types import CoE_Types as CoE_Types
 
 #
 #  Data Frame Scheme:
@@ -15,8 +18,10 @@ class CoE_Frame(object):
     stores and handles CoE raw data, received from an UDP call
     """
 
-    highMapping = 0b1001  # 0x09
+    highMapping = 0b1001  # 0x09, at least "frame" 9
+    payload = None
     rawdataLength = 14
+    timestamp = None
     types = CoE_Types.getInstance()
 
     def __init__(self, payload):
@@ -28,7 +33,10 @@ class CoE_Frame(object):
         self.payload = payload
         self.timestamp = time()
 
-        logging.debug(f'CoE frame {self.getString(config["debug"]["long"])}')
+        if config["modules"]["coe_frame"]["debug"]:
+            logging.debug(f'CoE frame {self.getString(verbose=config["debug"]["verbose"])}')
+        if config["modules"]["coe_frame"]["bell"]:
+            asyncio.run(self.bell())
 
     def __str__(self):
         """string representation of payload
@@ -36,7 +44,12 @@ class CoE_Frame(object):
         Returns:
             string: string representation
         """
-        return self.getString(False)
+        return self.getString(verbose=False)
+
+    async def bell(self):
+        sys.stdout.write("\r🔔> ")
+        await asyncio.sleep(1/4)
+        sys.stdout.write("\r  > ")
 
     def getAnalogue(self, index):
         """generate (raw) analogue values from 2 8 bit represenations at index (1-4), read as 16LE
@@ -74,6 +87,7 @@ class CoE_Frame(object):
 
     def getFrame(self):
         """second byte of self.payload is frame number, don't use on digital frame data.
+        For digital frames this method returns 0 for "low" and 9 for "high"
 
         Returns:
             int: frame number
@@ -111,7 +125,7 @@ class CoE_Frame(object):
 
         return int(self.payload[0])
 
-    def getString(self, long=False):
+    def getString(self, verbose=False):
         """create string representation of self.payload
 
         Returns:
@@ -158,8 +172,8 @@ class CoE_Frame(object):
         #     print(self.getDigitalValue(31))
         #     print(self.getDigitalValue(32))
 
-        if long:
-            return ''.join(map(
+        if verbose:
+            return f'{datetime.datetime.fromtimestamp(self.timestamp)} ' + ''.join(map(
                 lambda p, i: '[b%(i)d:%(p)02xh|%(p)03dd] '
                 % {'i': i, 'p': int(p)},
                 self.payload,

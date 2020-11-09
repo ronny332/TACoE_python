@@ -1,11 +1,15 @@
-import config
+from config import config
+
+from Data import Data
+from Shell import Shell
 from UDP_Server import UDP_Server
 
 if __name__ == "__main__":
-    # frame = bytes([53, 0, 0, 0, 0, 17, 0, 17, 18, 18, 2, 0, 0, 0, 0])
-
-    # df = CoE_Frame(frame)
-    # df.p()
-
     server = UDP_Server.getInstance()
     server.start()
+    data = Data.getInstance()
+    data.start()
+
+    if config["modules"]["shell"]["enabled"]:
+        shell = Shell.getInstance()
+        shell.start()
