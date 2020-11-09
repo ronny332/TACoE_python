@@ -1,3 +1,4 @@
+import json
 import multiprocessing
 import os
 import threading
@@ -40,9 +41,9 @@ class Shell(threading.Thread):
     def command(self, cmd):
         if len(self.frames) > 0:
             if cmd in ['a', "analogue"]:
-                print(self.data.getValues(analogue=True))
+                print(json.dumps(self.data.getValues(analogue=True)))
             elif cmd in ['d', "digital"]:
-                print(self.data.getValues(digital=True))
+                print(json.dumps(self.data.getValues(digital=True)))
             elif cmd in ['f', "frames"]:
                 for f in reversed(self.frames):
                     print(f.getString(verbose=True))
@@ -50,6 +51,7 @@ class Shell(threading.Thread):
             elif cmd in ['h', "help"]:
                 print('\n'.join([
                     '\ta(analogue):\tall analogue values',
+                    '\td(digital):\tall digital values',
                     '\tf(frames):\t\tshow all available frames',
                     '\th(help):\t\tshow this help',
                     '\tlf(last frame):\t\tshow last frame',
