@@ -34,7 +34,8 @@ class CoE_Frame(object):
         self.timestamp = time()
 
         if config["modules"]["coe_frame"]["debug"]:
-            logging.debug(f'CoE frame {self.getString(verbose=config["debug"]["verbose"])}')
+            logging.debug(
+                f'CoE frame {self.getString(verbose=config["debug"]["verbose"])}')
         if config["modules"]["coe_frame"]["bell"]:
             asyncio.run(self.bell())
 
@@ -187,6 +188,24 @@ class CoE_Frame(object):
                 range(self.rawdataLength)
 
             ))
+
+    def isAnalogue(self):
+        """detects if frame is has analogue data.
+        analogue frames have a number of 1,2,3 or 4.
+
+        Returns:
+            boolean: data is analogue or not
+        """
+        return self.payload[1] in range(1, 5)
+
+    def isDigital(self):
+        """the opposite of isAnaloge
+        digital frames have a number of 0 or 9.
+
+        Returns:
+            boolean: data is digital or not
+        """
+        return not self.isAnalogue()
 
     def isMapped(self):
         """return False for first value mapping, True for second value mapping

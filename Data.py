@@ -47,6 +47,37 @@ class Data(threading.Thread):
         """
         return os.path.join(config["app"]["dir"], config["app"]["name"] + '.dump')
 
+    def getValues(self, analogue=False, digital=False):
+        """creates a data dictionary, ordered by node numbers and indexes
+
+        Args:
+            analogue (bool, optional): delivers analogue values. Defaults to False.
+            digital (bool, optional): delivers digital values. Defaults to False.
+
+        Returns:
+            dictionary: data
+        """
+        data = {}
+
+        for f in self.frames:
+            if f.isAnalogue() and analogue:
+                node = f.getNode()
+                if node not in data:
+                    data[node] = {}
+                for i in range(1, 5):
+                    index = f.getIndex(i, analogue=True)
+                    data[node][index] = f.getAnalogue(i)
+
+            if f.isDigital() and digital:
+                node = f.getNode()
+                if node not in data:
+                    data[node] = {}
+                for i in range(1, 33):
+                    index = f.getIndex(i, analogue=False)
+                    data[node][index] = f.getDigital(i)
+
+        return data
+
     def run(self):
         """run the Data thread
         """
