@@ -1,0 +1,32 @@
+{
+    "55": {
+        "1": {
+            "name": "Anforderung WW"
+        }
+    },
+    "56": {
+        "2": {
+            "name": "T.Heizkreis 1 Extern"
+        }
+    },
+    "57": {
+        "3": {
+            "name": "T.Heizkreis 2 Extern"
+        }
+    },
+    "58": {
+        "16": {
+            "name": "Test"
+        }
+    },
+    "59": {
+        "32": {
+            "name": "Freigabe (Test)"
+        }
+    },
+    "60": {
+        "60": {
+            "name": "next test"
+        }
+    }
+}

@@ -1,0 +1,121 @@
+{
+    "51": {
+        "1": {
+            "name": "T.Kollektor",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "2": {
+            "name": "T.Solar VL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "3": {
+            "name": "T.Solar RL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "4": {
+            "name": "T.Speicher oben",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "5": {
+            "name": "T.Speicher mitte",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "6": {
+            "name": "T.Speicher unten",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "8": {
+            "name": "T.Pelletkessel VL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "9": {
+            "name": "T.Warmwasser unten",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "10": {
+            "name": "T.Zirkulation RL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "11": {
+            "name": "T.WW Austritt",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "12": {
+            "name": "T.Kollektor VL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "13": {
+            "name": "T.Rucklaufanhebung",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "14": {
+            "name": "T.Warmwasser oben",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "15": {
+            "name": "P.Solar",
+            "decimals": 1,
+            "unit": "°C"
+        }
+    },
+    "52": {
+        "1": {
+            "name": "T.Außen",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "2": {
+            "name": "T.Heizkreis 1 VL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "3": {
+            "name": "T.Heizkreis 1 RL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "4": {
+            "name": "T.Heizkreis 2 VL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "5": {
+            "name": "T.Heizkreis 2 RL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "6": {
+            "name": "T.Gaskassel VL",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "7": {
+            "name": "T.VL Ventil-Warmwasser",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "8": {
+            "name": "Test",
+            "decimals": 1,
+            "unit": "°C"
+        },
+        "9": {
+            "name": "Test Presure",
+            "decimals": 2,
+            "unit": "bar"
+        }
+    }
+}

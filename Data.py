@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import pickle
@@ -16,6 +17,10 @@ class Data(threading.Thread):
 
     __instance = None
 
+    config = {
+        'analogue': None,
+        'digital': None
+    }
     frames = None
     udp_server = None
 
@@ -38,6 +43,7 @@ class Data(threading.Thread):
         self.frames = self.udp_server.getFrames()
 
         self.restore()
+        self.readConfig()
 
     def getDumpFilename(self):
         """string of file where the saved and restored data goes to/comes from
@@ -78,12 +84,28 @@ class Data(threading.Thread):
 
         return data
 
-    def run(self):
-        """run the Data thread
+    def readConfig(self):
+        """read config files from disc
         """
-        while True:
-            sleep(config["modules"]["data"]["save"])
-            self.save()
+        config_analogue = 'config_analogue.json'
+        config_digital = 'config_digital.json'
+
+        fn = config_analogue
+
+        try:
+            with open(fn, 'r') as f:
+                self.config['analogue'] = json.load(f)
+
+            fn = config_digital
+            with open(fn, 'r') as f:
+                self.config['digital'] = json.load(f)
+
+            logging.info(
+                f'read config files {config_analogue} and {config_digital}'
+            )
+
+        except FileNotFoundError:
+            logging.error(f'Config file not found ({fn})')
 
     def restore(self):
         """restore saved data from disc, if existent
@@ -96,6 +118,13 @@ class Data(threading.Thread):
                 for f in frames:
                     self.frames.append(f)
                 logging.debug(f'restored {len(self.frames)} frames from disc')
+
+    def run(self):
+        """run the Data thread
+        """
+        while True:
+            sleep(config["modules"]["data"]["save"])
+            self.save()
 
     def save(self):
         """save in memory data to disc
