@@ -7,6 +7,7 @@ from CoE_Frame import CoE_Frame
 
 from config import config
 
+
 class UDP_Server(threading.Thread):
     """
     listen on port 5441 and receives 14 byte CoE UDP packets and stores them into a FIFO queue
@@ -32,7 +33,9 @@ class UDP_Server(threading.Thread):
         else:
             UDP_Server.__instance = self
 
-        logging.debug(f'UDP server initiated with fifo size of {self.frames.maxlen} frames, listening on UDP port {self.udp_port}')
+        logging.debug(
+            f"UDP server initiated with fifo size of {self.frames.maxlen} frames, listening on UDP port {self.udp_port}"
+        )
 
     def getFrames(self):
         """return frames object
@@ -43,10 +46,9 @@ class UDP_Server(threading.Thread):
         return self.frames
 
     def run(self):
-        """run the UDP_Server thread
-        """
+        """run the UDP_Server thread"""
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.bind(('', self.udp_port))
+            s.bind(("", self.udp_port))
 
             while True:
                 data, _ = s.recvfrom(CoE_Frame.rawdataLength)

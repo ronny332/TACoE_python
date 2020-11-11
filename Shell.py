@@ -40,39 +40,44 @@ class Shell(threading.Thread):
 
     def command(self, cmd):
         if len(self.frames) > 0:
-            if cmd in ['a', "analogue"]:
+            if cmd in ["a", "analogue"]:
                 print(json.dumps(self.data.getValues(analogue=True)))
-            elif cmd in ['d', "digital"]:
-                print(json.dumps(self.data.getValues(digital=True)))
-            elif cmd in ['f', "frames"]:
+            elif cmd in ["ar", "analogue raw"]:
+                print(json.dumps(self.data.getRawValues(analogue=True)))
+            elif cmd in ["dr", "digital raw"]:
+                print(json.dumps(self.data.getRawValues(digital=True)))
+            elif cmd in ["f", "frames"]:
                 for f in reversed(self.frames):
                     print(f.getString(verbose=True))
-                print(f'({len(self.frames)} frames)')
-            elif cmd in ['h', "help"]:
-                print('\n'.join([
-                    '\ta(analogue):\tall analogue values',
-                    '\td(digital):\tall digital values',
-                    '\tf(frames):\t\tshow all available frames',
-                    '\th(help):\t\tshow this help',
-                    '\tlf(last frame):\t\tshow last frame',
-                    '\tr(restore):\t\trestore saved frames',
-                    '\ts(save):\t\tsave available frames'
-                ]))
-            elif cmd in ['q', "quit"]:
+                print(f"({len(self.frames)} frames)")
+            elif cmd in ["h", "help"]:
+                print(
+                    "\n".join(
+                        [
+                            "\tar(analogue):\tall analogue raw values (JSON)",
+                            "\tdr(digital):\tall digital raw values (JSON)",
+                            "\tf(frames):\t\tshow all available frames",
+                            "\th(help):\t\tshow this help",
+                            "\tlf(last frame):\t\tshow last frame",
+                            "\tr(restore):\t\trestore saved frames",
+                            "\ts(save):\t\tsave available frames",
+                        ]
+                    )
+                )
+            elif cmd in ["q", "quit"]:
                 os._exit(1)
-            elif cmd in ['lf', "last frame"]:
-                print(f'{self.frames[-1].getString(verbose=True)}')
-            elif cmd in ['r', "restore"]:
+            elif cmd in ["lf", "last frame"]:
+                print(f"{self.frames[-1].getString(verbose=True)}")
+            elif cmd in ["r", "restore"]:
                 self.data.restore()
-            elif cmd in ['s', "save"]:
+            elif cmd in ["s", "save"]:
                 self.data.save()
             else:
-                print('invalid command')
+                print("invalid command")
         else:
-            print('need more data')
+            print("need more data")
 
     def run(self):
-        """run the Shell thread
-        """
+        """run the Shell thread"""
         while True:
-            self.command(input('  > '))
+            self.command(input("  > "))

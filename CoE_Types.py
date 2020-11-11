@@ -16,13 +16,13 @@ class CoE_Types(object):
         return CoE_Types.__instance
 
     units = {
-        0: (0, 'None', ''),
-        1: (1, 'Temperature', '°C'),
-        4: (0, 'Seconds', 's'),
-        10: (1, 'KiloWatt', 'kW'),
-        11: (1, 'KiloWattHours', 'kWh'),
-        12: (0, 'MegaWattHours', 'MWh'),
-        23: (2, 'Pressure', 'Bar')
+        0: (0, "None", ""),
+        1: (1, "Temperature", "°C"),
+        4: (0, "Seconds", "s"),
+        10: (1, "KiloWatt", "kW"),
+        11: (1, "KiloWattHours", "kWh"),
+        12: (0, "MegaWattHours", "MWh"),
+        23: (2, "Pressure", "Bar"),
     }
 
     def __init__(self):
@@ -33,7 +33,7 @@ class CoE_Types(object):
         else:
             CoE_Types.__instance = self
 
-        logging.debug('Types initialized')
+        logging.debug("Types initialized")
 
     def getTypeDetails(self, unit):
         """return a dictionary for given unit number
@@ -48,10 +48,10 @@ class CoE_Types(object):
             dictionary: details for given unit number
         """
         if self.units.get(unit, None) is None:
-            raise TypeError(f'{unit} is not a valid unit')
+            raise TypeError(f"{unit} is not a valid unit")
 
         return {
-            'decimals': self.units[unit],
-            'name': self.units[unit],
-            'unit': self.units[unit]
+            "decimals": self.units[unit],
+            "name": self.units[unit],
+            "unit": self.units[unit],
         }

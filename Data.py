@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -17,10 +18,7 @@ class Data(threading.Thread):
 
     __instance = None
 
-    config = {
-        'analogue': None,
-        'digital': None
-    }
+    config = {"analogue": None, "digital": None}
     frames = None
     udp_server = None
 
@@ -51,9 +49,38 @@ class Data(threading.Thread):
         Returns:
             string: dump filename
         """
-        return os.path.join(config["app"]["dir"], config["app"]["name"] + '.dump')
+        return os.path.join(config["app"]["dir"], config["app"]["name"] + ".dump")
 
     def getValues(self, analogue=False, digital=False):
+        data_analogue = None
+        data_digital = None
+
+        if analogue:
+            data_analogue = copy.deepcopy(self.config["analogue"])
+
+            for f in self.frames:
+                sNode = str(f.getNode())
+                if str(sNode) in data_analogue:
+                    indexes = list(map(lambda i: (i, str(f.getIndex(i))), range(1, 5)))
+                    for i in indexes:
+                        if i[1] in data_analogue[sNode]:
+                            decimals = int(data_analogue[sNode][i[1]]["decimals"])
+                            raw = f.getAnalogue(i[0])[2]
+                            timestamp = f.getTimestamp()
+                            unit = data_analogue[sNode][i[1]]["unit"]
+                            value = raw / pow(10, decimals)
+                            value_unit = f"{value} {unit}"
+
+                            data_analogue[sNode][i[1]]["raw"] = raw
+                            data_analogue[sNode][i[1]]["timestamp"] = timestamp
+                            data_analogue[sNode][i[1]]["value"] = value
+                            data_analogue[sNode][i[1]]["value_unit"] = value_unit
+        if digital:
+            data_digital = copy.deepcopy(self.config["digital"])
+
+        return (data_analogue, data_digital)
+
+    def getRawValues(self, analogue=False, digital=False):
         """creates a data dictionary, ordered by node numbers and indexes
 
         Args:
@@ -85,54 +112,48 @@ class Data(threading.Thread):
         return data
 
     def readConfig(self):
-        """read config files from disc
-        """
-        config_analogue = 'config_analogue.json'
-        config_digital = 'config_digital.json'
+        """read config files from disc"""
+        config_analogue = "config_analogue.json"
+        config_digital = "config_digital.json"
 
         fn = config_analogue
 
         try:
-            with open(fn, 'r') as f:
-                self.config['analogue'] = json.load(f)
+            with open(fn, "r") as f:
+                self.config["analogue"] = json.load(f)
 
             fn = config_digital
-            with open(fn, 'r') as f:
-                self.config['digital'] = json.load(f)
+            with open(fn, "r") as f:
+                self.config["digital"] = json.load(f)
 
-            logging.info(
-                f'read config files {config_analogue} and {config_digital}'
-            )
+            logging.info(f"read config files {config_analogue} and {config_digital}")
 
         except FileNotFoundError:
-            logging.error(f'Config file not found ({fn})')
+            logging.error(f"Config file not found ({fn})")
 
     def restore(self):
-        """restore saved data from disc, if existent
-        """
+        """restore saved data from disc, if existent"""
         if os.path.exists(self.getDumpFilename()):
-            with open(self.getDumpFilename(), 'rb') as f:
+            with open(self.getDumpFilename(), "rb") as f:
                 self.frames.clear()
                 frames = pickle.load(f)
 
                 for f in frames:
                     self.frames.append(f)
-                logging.debug(f'restored {len(self.frames)} frames from disc')
+                logging.debug(f"restored {len(self.frames)} frames from disc")
 
     def run(self):
-        """run the Data thread
-        """
+        """run the Data thread"""
         while True:
             sleep(config["modules"]["data"]["save"])
             self.save()
 
     def save(self):
-        """save in memory data to disc
-        """
-        with open(self.getDumpFilename(), 'wb') as f:
+        """save in memory data to disc"""
+        with open(self.getDumpFilename(), "wb") as f:
             pickle.dump(self.frames, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-            logging.debug(f'saved {len(self.frames)} frames to disc')
+            logging.debug(f"saved {len(self.frames)} frames to disc")
 
     def setFrames(self, frames):
         """sets the read/available frames data

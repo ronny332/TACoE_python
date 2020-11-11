@@ -9,8 +9,8 @@ from CoE_Types import CoE_Types as CoE_Types
 
 #
 #  Data Frame Scheme:
-#  [Node Number|1 byte|0-FF][Frame Number|1 byte|1-4]
-#
+#  analogue: [Node Number|1 byte|0-FF] [Frame Number|1 byte|1-4] [val1-4|2 bytes each|LE16] [unit val1-4|1 byte each|0-FF]
+#  digital:  [Node Number|1 byte|0-FF] [Map Number|1 byte|0x0 or 0x9] [val1-16|4 bytes|binary]
 
 
 class CoE_Frame(object):
@@ -28,14 +28,13 @@ class CoE_Frame(object):
         super().__init__()
 
         if not isinstance(payload, bytes) or len(payload) != self.rawdataLength:
-            raise TypeError('invalid type or wrong length of raw data.')
+            raise TypeError("invalid type or wrong length of raw data.")
 
         self.payload = payload
         self.timestamp = time()
 
         if config["modules"]["coe_frame"]["debug"]:
-            logging.debug(
-                f'CoE frame {self.getString(verbose=config["debug"]["verbose"])}')
+            logging.debug(f'CoE frame {self.getString(verbose=config["debug"]["verbose"])}')
         if config["modules"]["coe_frame"]["bell"]:
             asyncio.run(self.bell())
 
@@ -49,7 +48,7 @@ class CoE_Frame(object):
 
     async def bell(self):
         sys.stdout.write("\r🔔> ")
-        await asyncio.sleep(1/4)
+        await asyncio.sleep(1 / 4)
         sys.stdout.write("\r  > ")
 
     def getAnalogue(self, index):
@@ -63,9 +62,15 @@ class CoE_Frame(object):
             tuple: (node number as integer, index number as integer, 16bit LittleEndian representation of value at index, type as integer, timestamp of creation)
         """
         if index not in range(1, 5):
-            raise ValueError('only indexes between 1 and 4 are valid')
+            raise ValueError("only indexes between 1 and 4 are valid")
 
-        return (self.getNode(), self.getIndex(index, True), self.payload[index * 2 + 1] << 8 | self.payload[index * 2], self.payload[9 + index], self.timestamp)
+        return (
+            self.getNode(),
+            self.getIndex(index, True),
+            self.payload[index * 2 + 1] << 8 | self.payload[index * 2],
+            self.payload[9 + index],
+            self.timestamp,
+        )
 
     def getDigital(self, index):
         """get digital bool value for index.
@@ -106,7 +111,7 @@ class CoE_Frame(object):
             int: value from 1 to 16
         """
         if index not in range(1, 33):
-            raise ValueError('index has to be within range of 1 to 32')
+            raise ValueError("index has to be within range of 1 to 32")
 
         if analogue:
             return (self.getFrame() - 1) * 4 + index
@@ -174,20 +179,29 @@ class CoE_Frame(object):
         #     print(self.getDigitalValue(32))
 
         if verbose:
-            return f'{datetime.datetime.fromtimestamp(self.timestamp)} ' + ''.join(map(
-                lambda p, i: '[b%(i)d:%(p)02xh|%(p)03dd] '
-                % {'i': i, 'p': int(p)},
-                self.payload,
-                range(self.rawdataLength)
-            ))
+            return f"{datetime.datetime.fromtimestamp(self.timestamp)} " + "".join(
+                map(
+                    lambda p, i: "[b%(i)d:%(p)02xh|%(p)03dd] " % {"i": i, "p": int(p)},
+                    self.payload,
+                    range(self.rawdataLength),
+                )
+            )
         else:
-            return ''.join(map(
-                lambda p, i: '[%(p)02xh]'
-                % {'p': int(p)},
-                self.payload,
-                range(self.rawdataLength)
+            return "".join(
+                map(
+                    lambda p, i: "[%(p)02xh]" % {"p": int(p)},
+                    self.payload,
+                    range(self.rawdataLength),
+                )
+            )
 
-            ))
+    def getTimestamp(self):
+        """return integer representation of timestamp
+
+        Returns:
+            int: timestamp
+        """
+        return int(self.timestamp)
 
     def isAnalogue(self):
         """detects if frame is has analogue data.
