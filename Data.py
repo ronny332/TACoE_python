@@ -99,6 +99,11 @@ class Data(threading.Thread):
         return data
 
     def makeAnalogue(self):
+        """create analogue representations for all available config entries
+
+        Returns:
+            dictionary: dictionary with analogue representations
+        """
         data_analogue = copy.deepcopy(self.config["analogue"])
 
         for f in self.frames:
@@ -124,6 +129,11 @@ class Data(threading.Thread):
         return data_analogue
 
     def makeDigital(self):
+        """create digital representations for all available config entries
+
+        Returns:
+            dictionary: dictionary with digital representations
+        """
         data_digital = copy.deepcopy(self.config["digital"])
 
         for f in self.frames:
