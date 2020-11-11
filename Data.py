@@ -52,33 +52,20 @@ class Data(threading.Thread):
         return os.path.join(config["app"]["dir"], config["app"]["name"] + ".dump")
 
     def getValues(self, analogue=False, digital=False):
-        data_analogue = None
-        data_digital = None
+        """get values format in config declarations for digital and analogue configurations
 
+        Args:
+            analogue (bool, optional): [description]. Defaults to False.
+            digital (bool, optional): [description]. Defaults to False.
+            one, analogue or digital, has to be True
+
+        Returns:
+            dictionary: value dictionary of analogue or digital values
+        """
         if analogue:
-            data_analogue = copy.deepcopy(self.config["analogue"])
-
-            for f in self.frames:
-                sNode = str(f.getNode())
-                if str(sNode) in data_analogue:
-                    indexes = list(map(lambda i: (i, str(f.getIndex(i))), range(1, 5)))
-                    for i in indexes:
-                        if i[1] in data_analogue[sNode]:
-                            decimals = int(data_analogue[sNode][i[1]]["decimals"])
-                            raw = f.getAnalogue(i[0])[2]
-                            timestamp = f.getTimestamp()
-                            unit = data_analogue[sNode][i[1]]["unit"]
-                            value = raw / pow(10, decimals)
-                            value_unit = f"{value} {unit}"
-
-                            data_analogue[sNode][i[1]]["raw"] = raw
-                            data_analogue[sNode][i[1]]["timestamp"] = timestamp
-                            data_analogue[sNode][i[1]]["value"] = value
-                            data_analogue[sNode][i[1]]["value_unit"] = value_unit
+            return self.makeAnalogue()
         if digital:
-            data_digital = copy.deepcopy(self.config["digital"])
-
-        return (data_analogue, data_digital)
+            return self.makeDigital()
 
     def getRawValues(self, analogue=False, digital=False):
         """creates a data dictionary, ordered by node numbers and indexes
@@ -110,6 +97,47 @@ class Data(threading.Thread):
                     data[node][index] = f.getDigital(i)
 
         return data
+
+    def makeAnalogue(self):
+        data_analogue = copy.deepcopy(self.config["analogue"])
+
+        for f in self.frames:
+            if f.isDigital():
+                continue
+
+            sNode = str(f.getNode())
+            if str(sNode) in data_analogue:
+                indexes = list(map(lambda i: (i, str(f.getIndex(i))), range(1, 5)))
+                for i in indexes:
+                    if i[1] in data_analogue[sNode]:
+                        decimals = int(data_analogue[sNode][i[1]]["decimals"])
+                        raw = f.getAnalogue(i[0])[2]
+                        timestamp = f.getTimestamp()
+                        unit = data_analogue[sNode][i[1]]["unit"]
+                        value = raw / pow(10, decimals)
+                        value_unit = f"{value} {unit}"
+
+                        data_analogue[sNode][i[1]]["raw"] = raw
+                        data_analogue[sNode][i[1]]["timestamp"] = timestamp
+                        data_analogue[sNode][i[1]]["value"] = value
+                        data_analogue[sNode][i[1]]["value_unit"] = value_unit
+        return data_analogue
+
+    def makeDigital(self):
+        data_digital = copy.deepcopy(self.config["digital"])
+
+        for f in self.frames:
+            sNode = str(f.getNode())
+            if str(sNode) in data_digital:
+                indexes = list(map(lambda i: f.getIndex(i, False), range(1, 17)))
+                for i in indexes:
+                    sIndex = str(i)
+                    if sIndex in data_digital[sNode]:
+                        value = f.getDigital(i)[2]
+                        timestamp = f.getTimestamp()
+                        data_digital[sNode]["timestamp"] = timestamp
+                        data_digital[sNode]["value"] = value
+        return data_digital
 
     def readConfig(self):
         """read config files from disc"""

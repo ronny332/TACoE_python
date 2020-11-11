@@ -115,12 +115,12 @@ class CoE_Frame(object):
 
         if analogue:
             return (self.getFrame() - 1) * 4 + index
-        else:
-            if index > 16:
-                index -= 16
-            if self.isMapped():
-                index += 16
-            return index
+
+        if index > 16:
+            index -= 16
+        if self.isMapped():
+            index += 16
+        return index
 
     def getNode(self):
         """first byte of self.payload is node number
@@ -137,46 +137,6 @@ class CoE_Frame(object):
         Returns:
             string: from self.payload
         """
-
-        # if self.getNode() in [51, 52]:
-        #     print(self.getAnalogueValue(1))
-        #     print(self.getAnalogueValue(2))
-        #     print(self.getAnalogueValue(3))
-        #     print(self.getAnalogueValue(4))
-
-        # if self.getNode() in [55, 56, 57, 58, 59, 60]:
-        #     print(self.getDigitalValue(1))
-        #     print(self.getDigitalValue(2))
-        #     print(self.getDigitalValue(3))
-        #     print(self.getDigitalValue(4))
-        #     print(self.getDigitalValue(5))
-        #     print(self.getDigitalValue(6))
-        #     print(self.getDigitalValue(7))
-        #     print(self.getDigitalValue(8))
-        #     print(self.getDigitalValue(9))
-        #     print(self.getDigitalValue(10))
-        #     print(self.getDigitalValue(11))
-        #     print(self.getDigitalValue(12))
-        #     print(self.getDigitalValue(13))
-        #     print(self.getDigitalValue(14))
-        #     print(self.getDigitalValue(15))
-        #     print(self.getDigitalValue(16))
-        #     print(self.getDigitalValue(17))
-        #     print(self.getDigitalValue(18))
-        #     print(self.getDigitalValue(19))
-        #     print(self.getDigitalValue(20))
-        #     print(self.getDigitalValue(21))
-        #     print(self.getDigitalValue(22))
-        #     print(self.getDigitalValue(23))
-        #     print(self.getDigitalValue(24))
-        #     print(self.getDigitalValue(25))
-        #     print(self.getDigitalValue(26))
-        #     print(self.getDigitalValue(27))
-        #     print(self.getDigitalValue(28))
-        #     print(self.getDigitalValue(29))
-        #     print(self.getDigitalValue(30))
-        #     print(self.getDigitalValue(31))
-        #     print(self.getDigitalValue(32))
 
         if verbose:
             return f"{datetime.datetime.fromtimestamp(self.timestamp)} " + "".join(
