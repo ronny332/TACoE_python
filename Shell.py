@@ -42,8 +42,12 @@ class Shell(threading.Thread):
         if len(self.frames) > 0:
             if cmd in ["a", "analogue"]:
                 print(json.dumps(self.data.getValues(analogue=True)))
-            elif cmd in ["d", "digitak"]:
+            elif cmd in ["d", "digital"]:
                 print(json.dumps(self.data.getValues(digital=True)))
+            elif cmd in ["da", "diff analogue"]:
+                print(self.data.getDifference(analogue=True))
+            elif cmd in ["dd", "diff digital"]:
+                print(self.data.getDifference(digital=True))
             elif cmd in ["ar", "analogue raw"]:
                 print(json.dumps(self.data.getRawValues(analogue=True)))
             elif cmd in ["dr", "digital raw"]:

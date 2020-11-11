@@ -20,6 +20,7 @@ class Data(threading.Thread):
 
     config = {"analogue": None, "digital": None}
     frames = None
+    last = {"analogue": {}, "digital": {}}
     udp_server = None
 
     @staticmethod
@@ -42,6 +43,74 @@ class Data(threading.Thread):
 
         self.restore()
         self.readConfig()
+
+    def clearLast(self):
+        """set the last values for analogue and digital back to None.
+        self.getDifference() will return all available values at next call.
+        """
+        self.last["analogue"] = {}
+        self.last["digital"] = {}
+
+    def getDifference(self, analogue=False, digital=False):
+        """calculates the difference between the current and last comparison.
+        analogue and digital share 99% the same code, but to make later changes easier,
+        both ways gat handled divided.
+
+        Args:
+            analogue (bool, optional): get differences for analogue values. Defaults to False.
+            digital (bool, optional): get differences for digital values. Defaults to False.
+
+        Returns:
+            dictionary: dictionary of tuples
+        """
+        diff = []
+
+        if analogue:
+            data_analogue = self.getValues(analogue=True)
+            if self.last["analogue"]:
+                for n in data_analogue:
+                    sNode = str(n)
+
+                    for sIndex in data_analogue[sNode].keys():
+                        if "value" not in data_analogue[sNode][sIndex]:
+                            continue
+                        if (
+                            sNode not in data_analogue
+                            or data_analogue[sNode][sIndex]["value"] != self.last["analogue"][sNode][sIndex]["value"]
+                        ):
+                            diff.append(
+                                (
+                                    sNode,
+                                    sIndex,
+                                    data_analogue[sNode][sIndex]["value"],
+                                    self.last["analogue"][sNode][sIndex]["value"],
+                                )
+                            )
+            self.last["analogue"] = data_analogue
+        elif digital:
+            data_digital = self.getValues(digital=True)
+
+            if self.last["digital"]:
+                for n in data_digital:
+                    sNode = str(n)
+
+                    for sIndex in data_digital[sNode].keys():
+                        if "value" not in data_digital[sNode][sIndex]:
+                            continue
+                        if (
+                            sNode not in data_digital
+                            or data_digital[sNode][sIndex]["value"] != self.last["digital"][sNode][sIndex]["value"]
+                        ):
+                            diff.append(
+                                (
+                                    sNode,
+                                    sIndex,
+                                    data_digital[sNode][sIndex]["value"],
+                                    self.last["digital"][sNode][sIndex]["value"],
+                                )
+                            )
+            self.last["digital"] = data_digital
+        return diff
 
     def getDumpFilename(self):
         """string of file where the saved and restored data goes to/comes from
@@ -145,8 +214,8 @@ class Data(threading.Thread):
                     if sIndex in data_digital[sNode]:
                         value = f.getDigital(i)[2]
                         timestamp = f.getTimestamp()
-                        data_digital[sNode]["timestamp"] = timestamp
-                        data_digital[sNode]["value"] = value
+                        data_digital[sNode][sIndex]["timestamp"] = timestamp
+                        data_digital[sNode][sIndex]["value"] = value
         return data_digital
 
     def readConfig(self):
