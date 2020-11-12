@@ -11,7 +11,7 @@ config = {
     "debug": {"level": logging.DEBUG, "verbose": True},
     "modules": {
         "frame": {"bell": True, "debug": False},
-        "data": {"save": 300},
+        "data": {"renew": 300, "save": 300},
         "shell": {"enabled": True},
     },
     "udp_server": {"fifo_length": 100, "udp_port": 5441},
@@ -19,9 +19,7 @@ config = {
 
 
 def initHomeDirectory():
-    config["app"][
-        "dir"
-    ] = f'{os.path.join(config["app"]["home"],config["app"]["name"])}'
+    config["app"]["dir"] = f'{os.path.join(config["app"]["home"],config["app"]["name"])}'
 
     if not os.path.isdir(config["app"]["dir"]):
         try:
@@ -34,10 +32,7 @@ def initHomeDirectory():
             sys.exit(1)
 
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)s:%(message)s", level=config["debug"]["level"]
-)
-
+logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=config["debug"]["level"])
 logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 initHomeDirectory()

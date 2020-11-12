@@ -5,7 +5,7 @@ import os
 import pickle
 import threading
 
-from time import sleep
+from time import sleep, time
 
 from config import config
 from UDP_Server import UDP_Server
@@ -21,6 +21,7 @@ class Data(threading.Thread):
     config = {"analogue": None, "digital": None}
     frames = None
     last = {"analogue": {}, "digital": {}}
+    renewed = {}
     udp_server = None
 
     @staticmethod
@@ -44,6 +45,12 @@ class Data(threading.Thread):
         self.restore()
         self.readConfig()
 
+    def cleanFrames(self):
+        """remove all available frames from RAM and harddrive"""
+        self.clearLast()
+        self.frames.clear()
+        self.save()
+
     def clearLast(self):
         """set the last values for analogue and digital back to None.
         self.getDifference() will return all available values at next call.
@@ -53,8 +60,6 @@ class Data(threading.Thread):
 
     def getDifference(self, analogue=False, digital=False):
         """calculates the difference between the current and last comparison.
-        analogue and digital share 99% the same code, but to make later changes easier,
-        both ways gat handled divided.
 
         Args:
             analogue (bool, optional): get differences for analogue values. Defaults to False.
@@ -64,58 +69,37 @@ class Data(threading.Thread):
             dictionary: dictionary of tuples
         """
         diff = []
+        timestamp = time()
 
-        if analogue:
-            data_analogue = self.getValues(analogue=True)
-            if self.last["analogue"]:
-                for n in data_analogue:
-                    sNode = str(n)
+        data = self.getValues(analogue=True) if analogue else self.getValues(digital=True)
+        type = "analogue" if analogue else "digital"
 
-                    for sIndex in data_analogue[sNode].keys():
-                        if (
-                            "value" not in data_analogue[sNode][sIndex]
-                            or "value" not in self.last["analogue"][sNode][sIndex]
-                        ):
-                            continue
-                        if (
-                            sNode not in data_analogue
-                            or data_analogue[sNode][sIndex]["value"] != self.last["analogue"][sNode][sIndex]["value"]
-                        ):
-                            diff.append(
-                                (
-                                    sNode,
-                                    sIndex,
-                                    data_analogue[sNode][sIndex]["value"],
-                                    self.last["analogue"][sNode][sIndex]["value"],
-                                )
-                            )
-            self.last["analogue"] = data_analogue
-        elif digital:
-            data_digital = self.getValues(digital=True)
+        if self.last[type]:
+            for n in data:
+                sNode = str(n)
 
-            if self.last["digital"]:
-                for n in data_digital:
-                    sNode = str(n)
+                for sIndex in data[sNode].keys():
+                    index_renewed = f"{sNode}-{sIndex}"
+                    if index_renewed not in self.renewed:
+                        self.renewed[index_renewed] = timestamp - config["modules"]["data"]["renew"] - 1
+                    if "value" not in data[sNode][sIndex] or "value" not in self.last[type][sNode][sIndex]:
+                        continue
+                    if (
+                        sNode not in data
+                        or data[sNode][sIndex]["value"] != self.last[type][sNode][sIndex]["value"]
+                        or self.renewed[index_renewed] < timestamp - config["modules"]["data"]["renew"]
+                    ):
+                        diff.append(
+                            [
+                                sNode,
+                                sIndex,
+                                data[sNode][sIndex]["value"],
+                                self.last[type][sNode][sIndex]["value"],
+                            ]
+                        )
+                        self.renewed[index_renewed] = timestamp
+        self.last[type] = data
 
-                    for sIndex in data_digital[sNode].keys():
-                        if (
-                            "value" not in data_digital[sNode][sIndex]
-                            or "value" not in self.last["digital"][sNode][sIndex]
-                        ):
-                            continue
-                        if (
-                            sNode not in data_digital
-                            or data_digital[sNode][sIndex]["value"] != self.last["digital"][sNode][sIndex]["value"]
-                        ):
-                            diff.append(
-                                (
-                                    sNode,
-                                    sIndex,
-                                    data_digital[sNode][sIndex]["value"],
-                                    self.last["digital"][sNode][sIndex]["value"],
-                                )
-                            )
-            self.last["digital"] = data_digital
         return diff
 
     def getDumpFilename(self):

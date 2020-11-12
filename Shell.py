@@ -42,12 +42,15 @@ class Shell(threading.Thread):
         if len(self.frames) > 0:
             if cmd in ["a", "analogue"]:
                 print(json.dumps(self.data.getValues(analogue=True)))
+            elif cmd in ["c", "clean"]:
+                self.data.cleanFrames()
+                print("OK")
             elif cmd in ["d", "digital"]:
                 print(json.dumps(self.data.getValues(digital=True)))
             elif cmd in ["da", "diff analogue"]:
-                print(self.data.getDifference(analogue=True))
+                print(json.dumps(self.data.getDifference(analogue=True)))
             elif cmd in ["dd", "diff digital"]:
-                print(self.data.getDifference(digital=True))
+                print(json.dumps(self.data.getDifference(digital=True)))
             elif cmd in ["ar", "analogue raw"]:
                 print(json.dumps(self.data.getRawValues(analogue=True)))
             elif cmd in ["dr", "digital raw"]:
@@ -60,8 +63,12 @@ class Shell(threading.Thread):
                 print(
                     "\n".join(
                         [
-                            "\tar(analogue):\tall analogue raw values (JSON)",
-                            "\tdr(digital):\tall digital raw values (JSON)",
+                            "\ta(analogue):\t\tall analogue values (JSON)",
+                            "\td(digital):\t\tall digital values (JSON)",
+                            "\tar(analogue):\t\tall analogue raw values (JSON)",
+                            "\tda(diff analogue):\tdifferences of analogue values since last call (JSON)",
+                            "\tdd(diff digital):\tdifferences of digital values since last call (JSON)",
+                            "\tdr(digital):\t\tall digital raw values (JSON)",
                             "\tf(frames):\t\tshow all available frames",
                             "\th(help):\t\tshow this help",
                             "\tlf(last frame):\t\tshow last frame",
@@ -81,7 +88,7 @@ class Shell(threading.Thread):
             else:
                 print("invalid command")
         else:
-            print("need more data")
+            print("no frames, need to wait for new input.")
 
     def run(self):
         """run the Shell thread"""
