@@ -73,7 +73,7 @@
     },
     "52": {
         "1": {
-            "name": "T.Außen",
+            "name": "T.Aussen",
             "decimals": 1,
             "unit": "°C"
         },
@@ -108,7 +108,7 @@
             "unit": "°C"
         },
         "8": {
-            "name": "Test",
+            "name": "Test Temp",
             "decimals": 1,
             "unit": "°C"
         },
