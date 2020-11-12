@@ -115,6 +115,17 @@ class Data(threading.Thread):
         return os.path.join(config["app"]["dir"], config["app"]["name"] + ".dump")
 
     def getReadingsName(self, node, index, analogue=False, digital=False):
+        """returns a matching Name, if existent
+
+        Args:
+            node (int): Node number
+            index (int): Index number
+            analogue (bool, optional): get name for analogue value. Defaults to False.
+            digital (bool, optional): get name for digital value.. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
         type = "analogue" if analogue else "digital"
 
         sNode = str(node)
