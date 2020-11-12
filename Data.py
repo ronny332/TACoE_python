@@ -240,8 +240,8 @@ class Data(threading.Thread):
 
     def readConfig(self):
         """read config files from disc"""
-        config_analogue = "config_analogue.json"
-        config_digital = "config_digital.json"
+        config_analogue = os.path.join(config.["app"]["cwd"], "config_analogue.json")
+        config_digital = os.path.join(config.["app"]["cwd"], "config_digital.json")
 
         fn = config_analogue
 

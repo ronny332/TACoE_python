@@ -1,0 +1,10 @@
+[Unit]
+Description=TACoE service
+
+[Service]
+User=fhem
+Type=simple
+ExecStart=/usr/bin/python3 /opt/fhem/custom/TACoE/main.py
+
+[Install]
+WantedBy=multi-user.target

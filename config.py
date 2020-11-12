@@ -4,6 +4,7 @@ import sys
 
 config = {
     "app": {
+        "cwd": os.path.dirname(os.path.realpath(__file__)),
         "dir": None,
         "home": os.path.join(os.path.expanduser("~"), ".config"),
         "name": "TACoE",
