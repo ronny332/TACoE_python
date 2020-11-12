@@ -6,6 +6,8 @@ import threading
 from config import config
 from Frame import Frame
 
+import Telnet
+
 
 class UDP_Server(threading.Thread):
     """
@@ -14,7 +16,9 @@ class UDP_Server(threading.Thread):
 
     __instance = None
 
+    callback = None
     frames = deque(maxlen=config["udp_server"]["fifo_length"])
+    telnet = None
     udp_port = config["udp_server"]["udp_port"]
 
     @staticmethod
@@ -36,6 +40,12 @@ class UDP_Server(threading.Thread):
             f"UDP server initiated with fifo size of {self.frames.maxlen} frames, listening on UDP port {self.udp_port}"
         )
 
+    def initialize(self):
+        """get needed instances from local classes
+        """
+        self.telnet = Telnet.Telnet.getInstance()
+
+
     def getFrames(self):
         """return frames object
 
@@ -54,5 +64,13 @@ class UDP_Server(threading.Thread):
                 try:
                     frame = Frame(data)
                     self.frames.append(frame)
+                    self.sendUpdate()
+
                 except TypeError as type_error:
                     logging.error(type_error)
+
+    def sendUpdate(self):
+        """sets update event to true
+        """
+        if config["modules"]["telnet"]["enabled"] and config["modules"]["telnet"]["receiveUpdates"]:
+            self.telnet.getUpdateEvent().set()

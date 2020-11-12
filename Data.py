@@ -8,7 +8,7 @@ import threading
 from time import sleep, time
 
 from config import config
-from UDP_Server import UDP_Server
+import UDP_Server
 
 
 class Data(threading.Thread):
@@ -39,7 +39,9 @@ class Data(threading.Thread):
         else:
             Data.__instance = self
 
-        self.udp_server = UDP_Server.getInstance()
+    def initialize(self):
+        """get needed instances from local classes"""
+        self.udp_server = UDP_Server.UDP_Server.getInstance()
         self.frames = self.udp_server.getFrames()
 
         self.restore()
@@ -68,13 +70,16 @@ class Data(threading.Thread):
         Returns:
             dictionary: dictionary of tuples
         """
-        diff = []
         timestamp = time()
 
         data = self.getValues(analogue=True) if analogue else self.getValues(digital=True)
         type = "analogue" if analogue else "digital"
 
-        if self.last[type]:
+        if not self.last[type]:
+            self.last[type] = data
+            return self.getDifference(analogue=analogue, digital=digital)
+        else:
+            diff = []
             for n in data:
                 sNode = str(n)
 
@@ -98,9 +103,8 @@ class Data(threading.Thread):
                             ]
                         )
                         self.renewed[index_renewed] = timestamp
-        self.last[type] = data
-
-        return diff
+            self.last[type] = data
+            return diff
 
     def getDumpFilename(self):
         """string of file where the saved and restored data goes to/comes from

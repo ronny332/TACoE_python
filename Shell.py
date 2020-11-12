@@ -5,8 +5,8 @@ import threading
 
 from time import sleep
 
-from Data import Data
-from UDP_Server import UDP_Server
+import Data
+import UDP_Server
 
 
 class Shell(threading.Thread):
@@ -34,8 +34,10 @@ class Shell(threading.Thread):
         else:
             Shell.__instance = self
 
-        self.data = Data.getInstance()
-        self.udp_server = UDP_Server.getInstance()
+    def initialize(self):
+        """get needed instances from local classes"""
+        self.data = Data.Data.getInstance()
+        self.udp_server = UDP_Server.UDP_Server.getInstance()
         self.frames = self.udp_server.getFrames()
 
     def command(self, cmd):
