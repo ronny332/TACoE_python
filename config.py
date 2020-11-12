@@ -10,7 +10,7 @@ config = {
     },
     "debug": {"level": logging.DEBUG, "verbose": True},
     "modules": {
-        "coe_frame": {"bell": True, "debug": False},
+        "frame": {"bell": True, "debug": False},
         "data": {"save": 300},
         "shell": {"enabled": True},
     },

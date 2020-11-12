@@ -5,11 +5,10 @@ from Shell import Shell
 from UDP_Server import UDP_Server
 
 if __name__ == "__main__":
-    server = UDP_Server.getInstance()
-    server.start()
-    data = Data.getInstance()
-    data.start()
+    threads = {"data": Data.getInstance(), "server": UDP_Server.getInstance()}
 
     if config["modules"]["shell"]["enabled"]:
-        shell = Shell.getInstance()
-        shell.start()
+        threads["shell"] = Shell.getInstance()
+
+    for _, t in threads.items():
+        t.start()

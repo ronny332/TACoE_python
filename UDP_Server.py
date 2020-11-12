@@ -3,9 +3,8 @@ import logging
 import socket
 import threading
 
-from CoE_Frame import CoE_Frame
-
 from config import config
+from Frame import Frame
 
 
 class UDP_Server(threading.Thread):
@@ -51,9 +50,9 @@ class UDP_Server(threading.Thread):
             s.bind(("", self.udp_port))
 
             while True:
-                data, _ = s.recvfrom(CoE_Frame.rawdataLength)
+                data, _ = s.recvfrom(Frame.rawdataLength)
                 try:
-                    frame = CoE_Frame(data)
+                    frame = Frame(data)
                     self.frames.append(frame)
                 except TypeError as type_error:
                     logging.error(type_error)

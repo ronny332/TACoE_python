@@ -5,7 +5,6 @@ import sys
 from time import time
 
 from config import config as config
-from CoE_Types import CoE_Types as CoE_Types
 
 #
 #  Data Frame Scheme:
@@ -13,7 +12,7 @@ from CoE_Types import CoE_Types as CoE_Types
 #  digital:  [Node Number|1 byte|0-FF] [Map Number|1 byte|0x0 or 0x9] [val1-16|4 bytes|binary]
 
 
-class CoE_Frame(object):
+class Frame(object):
     """
     stores and handles CoE raw data, received from an UDP call
     """
@@ -22,7 +21,6 @@ class CoE_Frame(object):
     payload = None
     rawdataLength = 14
     timestamp = None
-    types = CoE_Types.getInstance()
 
     def __init__(self, payload):
         super().__init__()
@@ -33,9 +31,9 @@ class CoE_Frame(object):
         self.payload = payload
         self.timestamp = time()
 
-        if config["modules"]["coe_frame"]["debug"]:
-            logging.debug(f'CoE frame {self.getString(verbose=config["debug"]["verbose"])}')
-        if config["modules"]["coe_frame"]["bell"]:
+        if config["modules"]["frame"]["debug"]:
+            logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
+        if config["modules"]["frame"]["bell"]:
             asyncio.run(self.bell())
 
     def __str__(self):

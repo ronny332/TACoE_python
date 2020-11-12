@@ -72,7 +72,10 @@ class Data(threading.Thread):
                     sNode = str(n)
 
                     for sIndex in data_analogue[sNode].keys():
-                        if "value" not in data_analogue[sNode][sIndex]:
+                        if (
+                            "value" not in data_analogue[sNode][sIndex]
+                            or "value" not in self.last["analogue"][sNode][sIndex]
+                        ):
                             continue
                         if (
                             sNode not in data_analogue
@@ -95,7 +98,10 @@ class Data(threading.Thread):
                     sNode = str(n)
 
                     for sIndex in data_digital[sNode].keys():
-                        if "value" not in data_digital[sNode][sIndex]:
+                        if (
+                            "value" not in data_digital[sNode][sIndex]
+                            or "value" not in self.last["digital"][sNode][sIndex]
+                        ):
                             continue
                         if (
                             sNode not in data_digital
