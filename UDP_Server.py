@@ -6,7 +6,7 @@ import threading
 from config import config
 from Frame import Frame
 
-import Telnet
+import FHEM
 
 
 class UDP_Server(threading.Thread):
@@ -17,8 +17,8 @@ class UDP_Server(threading.Thread):
     __instance = None
 
     callback = None
+    fhem = None
     frames = deque(maxlen=config["udp_server"]["fifo_length"])
-    telnet = None
     udp_port = config["udp_server"]["udp_port"]
 
     @staticmethod
@@ -43,7 +43,7 @@ class UDP_Server(threading.Thread):
     def initialize(self):
         """get needed instances from local classes
         """
-        self.telnet = Telnet.Telnet.getInstance()
+        self.fhem = FHEM.FHEM.getInstance()
 
 
     def getFrames(self):
@@ -72,5 +72,5 @@ class UDP_Server(threading.Thread):
     def sendUpdate(self):
         """sets update event to true
         """
-        if config["modules"]["telnet"]["enabled"] and config["modules"]["telnet"]["receiveUpdates"]:
-            self.telnet.getUpdateEvent().set()
+        if config["modules"]["fhem"]["enabled"] and config["modules"]["fhem"]["receiveUpdates"]:
+            self.fhem.getUpdateEvent().set()

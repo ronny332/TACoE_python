@@ -10,10 +10,19 @@ config = {
     },
     "debug": {"level": logging.DEBUG, "verbose": True},
     "modules": {
+        "fhem": {
+            "createDevice": True,
+            "device": "dum_cmi",
+            "enabled": True,
+            "host": "10.0.0.23",
+            "port": 7072,
+            "prompt": "fhem> ",
+            "receiveUpdates": True,
+            "timeout": 10,
+        },
         "frame": {"bell": True, "debug": False},
         "data": {"renew": 300, "save": 300},
         "shell": {"enabled": True},
-        "telnet": {"enabled": True, "receiveUpdates": True},
     },
     "udp_server": {"fifo_length": 100, "udp_port": 5441},
 }

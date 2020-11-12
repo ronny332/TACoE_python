@@ -18,7 +18,7 @@ class Data(threading.Thread):
 
     __instance = None
 
-    config = {"analogue": None, "digital": None}
+    config = {"analogue": {}, "digital": {}}
     frames = None
     last = {"analogue": {}, "digital": {}}
     renewed = {}
@@ -113,6 +113,21 @@ class Data(threading.Thread):
             string: dump filename
         """
         return os.path.join(config["app"]["dir"], config["app"]["name"] + ".dump")
+
+    def getReadingsName(self, node, index, analogue=False, digital=False):
+        type = "analogue" if analogue else "digital"
+
+        sNode = str(node)
+        sIndex = str(index)
+
+        if (
+            sNode in self.config[type]
+            and sIndex in self.config[type][sNode]
+            and "name" in self.config[type][sNode][sIndex]
+        ):
+            return self.config[type][sNode][sIndex]["name"].replace(" ", "_")
+
+        return False
 
     def getValues(self, analogue=False, digital=False):
         """get values format in config declarations for digital and analogue configurations
