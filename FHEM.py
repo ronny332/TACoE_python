@@ -52,7 +52,7 @@ class FHEM(threading.Thread):
 
         if con:
             if self.isPrompt(con):
-                alias = config["modules"]["fhem"]
+                alias = config["modules"]["fhem"]["alias"]
                 device = config["modules"]["fhem"]["device"]
                 cmd = f"define {device} dummy\nattr {device} event-on-change-reading .*\n"
                 cmd += "\n" if not alias else f"attr {device} alias {alias}\n\n"
@@ -138,8 +138,7 @@ class FHEM(threading.Thread):
         self.updateReadings()
 
     def updateReadings(self):
-        """send readings to FHEM instance via telnet
-        """
+        """send readings to FHEM instance via telnet"""
         data_analogue = self.data.getDifference(analogue=True)
         data_digital = self.data.getDifference(digital=True)
 
