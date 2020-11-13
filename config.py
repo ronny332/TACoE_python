@@ -12,6 +12,7 @@ config = {
     "debug": {"level": logging.DEBUG, "verbose": True},
     "modules": {
         "fhem": {
+            "alias": "CMI",
             "createDevice": True,
             "device": "dum_cmi",
             "enabled": True,

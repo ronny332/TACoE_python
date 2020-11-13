@@ -52,8 +52,10 @@ class FHEM(threading.Thread):
 
         if con:
             if self.isPrompt(con):
+                alias = config["modules"]["fhem"]
                 device = config["modules"]["fhem"]["device"]
-                cmd = f"define {device} dummy\nattr {device} event-on-change-reading .*\n\n"
+                cmd = f"define {device} dummy\nattr {device} event-on-change-reading .*\n"
+                cmd += "\n" if not alias else f"attr {device} alias {alias}\n\n"
                 self.sendCommand(con, cmd)
 
             if self.isPrompt(con, True):
