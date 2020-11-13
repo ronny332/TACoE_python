@@ -60,7 +60,7 @@ class FHEM(threading.Thread):
                 cmd = f"define {device} dummy\nattr {device} event-on-change-reading .*\n"
                 cmd += f"attr {device} alias {alias}\n" if alias else ""
                 cmd += f"attr {device} group {group}\n" if group else ""
-                cmd += f"attr {device} room {room}\n" if not room else ""
+                cmd += f"attr {device} room {room}\n" if room else ""
                 cmd += "\n"
 
                 self.sendCommand(con, cmd)
