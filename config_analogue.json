@@ -67,8 +67,8 @@
         },
         "15": {
             "name": "P.Solar",
-            "decimals": 1,
-            "unit": "°C"
+            "decimals": 2,
+            "unit": "bar"
         }
     },
     "52": {
