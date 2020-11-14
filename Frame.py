@@ -15,6 +15,7 @@ class Frame(object):
     """
 
     highMapping = 0b1001  # 0x09, at least "frame" 9
+    modified = False
     payload = None
     rawdataLength = 14
     timestamp = None
@@ -252,6 +253,14 @@ class Frame(object):
         """
         return self.payload[1] == self.highMapping
 
+    def isModified(self):
+        """currently just simple wrapper for self.modified
+
+        Returns:
+            boolean: is modified
+        """
+        return self.modified
+
     def isMutable(self):
         """only bytearrays are muteable, bytes instances aren't
 
@@ -260,11 +269,14 @@ class Frame(object):
         """
         return isinstance(self.payload, bytearray)
 
-    def setAnalogue(self, index, frame, value):
+    def setAnalogue(self, frame, index, value):
         if index not in range(1, 5) and frame not in range(1, 9) and value not in range(65536):
             raise ValueError("invalid input.")
 
-        self.setFrame(frame)
+        if self.isModified() and frame != self.getFrame():
+            raise ValueError("Frame number already set, can't use a different one with the same frame.")
+        elif not self.isModified():
+            self.setFrame(frame)
         self.setValueAtIndex(index, value)
 
     def setFrame(self, frame):
@@ -284,6 +296,7 @@ class Frame(object):
         if not self.isMutable():
             raise TypeError("Frame not mutable.")
 
+        self.modified = True
         self.payload[1] = frame
 
     def setNode(self, node):
@@ -302,6 +315,10 @@ class Frame(object):
             raise TypeError("Frame not mutable.")
 
         self.payload[0] = node
+
+    def setTimestamp(self):
+        """timestamp to property"""
+        self.timestamp = self.getTimestamp()
 
     def setUnit(self, index, unit=1):
         """TODO
@@ -369,7 +386,7 @@ class Frame(object):
             (rawIndex, rawFrame) = self.getTupleForIndex(index, analogue=True)
 
             self.setNode(node)
-            self.setAnalogue(rawIndex, rawFrame, rawValue)
+            self.setAnalogue(rawFrame, rawIndex, rawValue)
 
             print(rawIndex, rawFrame, rawValue)
         else:
@@ -380,7 +397,7 @@ class Frame(object):
             print(self.getTupleForIndex(index, digital=True))
 
     def setValueAtIndex(self, index, value):
-        """TODO
+        """TODO only for analogue values
 
         Args:
             index ([type]): [description]
@@ -403,4 +420,4 @@ class Frame(object):
 
         self.payload[index * 2] = (value & 0xFF).to_bytes(1, byteorder="little")[0]
         self.payload[index * 2 + 1] = (value >> 8 & 0xFF).to_bytes(1, byteorder="little")[0]
-        self.setUnit(index, unit=1)
+        self.setUnit(index, unit=1)  # just 1 for °C for now, rest TODO
