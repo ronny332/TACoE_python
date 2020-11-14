@@ -6,12 +6,9 @@ from time import time
 
 from config import config as config
 
-#
 #  Data Frame Scheme:
 #  analogue: [Node Number|1 byte|0-FF] [Frame Number|1 byte|1-8] [val1-4|2 bytes each|LE16] [unit val1-4|1 byte each|0-FF]
 #  digital:  [Node Number|1 byte|0-FF] [Map Number|1 byte|0x0 or 0x9] [val1-16|4 bytes|binary]
-
-
 class Frame(object):
     """
     stores and handles CoE raw data, received from an UDP call
@@ -289,28 +286,15 @@ class Frame(object):
 
         self.payload[1] = frame
 
-    def setValueAtIndex(self, index, value):
-        if not self.isAnalogue():
-            raise TypeError("Frame is not of type analogue.")
-        if not self.isMutable():
-            raise TypeError("Frame not mutable.")
-        if index not in range(1, 5):
-            raise ValueError("Index has to be between 1 and 4.")
-        if value not in range(65536):
-            raise ValueError("Value has to be between 0 and 65535.")
-
-        self.payload[2 + index] = 4
-        # TODO (1245427).to_bytes(3, byteorder='little')
-
     def setNode(self, node):
         """Sets the node number of current frame (0-255).
 
         Args:
-            node (integer): node number
+            node ([type]): [description]
 
         Raises:
-            ValueError: node number has to be between 0 and 255.
-            TypeError: Frame not mutable.
+            ValueError: [description]
+            TypeError: [description]
         """
         if node not in range(256):
             raise ValueError("node number has to be between 0 and 255.")
@@ -319,7 +303,44 @@ class Frame(object):
 
         self.payload[0] = node
 
+    def setUnit(self, index, unit=1):
+        """TODO
+
+        Args:
+            index ([type]): [description]
+            type (int, optional): [description]. Defaults to 1.
+
+        Raises:
+            ValueError: [description]
+            TypeError: [description]
+        """
+        if index not in range(1, 5):
+            raise ValueError("Index has to be between 1 and 4.")
+        if not self.isAnalogue():
+            raise TypeError("Only analogue type has units.")
+
+        self.payload[9 + index] = unit
+
     def setValue(self, node, index, value, decimals=0, analogue=False, digital=False):
+        """TODO
+
+        Args:
+            node ([type]): [description]
+            index ([type]): [description]
+            value ([type]): [description]
+            decimals (int, optional): [description]. Defaults to 0.
+            analogue (bool, optional): [description]. Defaults to False.
+            digital (bool, optional): [description]. Defaults to False.
+
+        Raises:
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        """
         if node not in range(256):
             raise ValueError("node has to be between 0 and 255")
         if analogue:  # analogue
@@ -357,3 +378,29 @@ class Frame(object):
 
             print(rawIndex, rawFrame, rawValue)
             print(self.getTupleForIndex(index, digital=True))
+
+    def setValueAtIndex(self, index, value):
+        """TODO
+
+        Args:
+            index ([type]): [description]
+            value ([type]): [description]
+
+        Raises:
+            TypeError: [description]
+            TypeError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        """
+        if not self.isAnalogue():
+            raise TypeError("Frame is not of type analogue.")
+        if not self.isMutable():
+            raise TypeError("Frame not mutable.")
+        if index not in range(1, 5):
+            raise ValueError("Index has to be between 1 and 4.")
+        if value not in range(65536):
+            raise ValueError("Value has to be between 0 and 65535.")
+
+        self.payload[index * 2] = (value & 0xFF).to_bytes(1, byteorder="little")[0]
+        self.payload[index * 2 + 1] = (value >> 8 & 0xFF).to_bytes(1, byteorder="little")[0]
+        self.setUnit(index, unit=1)
