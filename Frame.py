@@ -296,8 +296,16 @@ class Frame(object):
         if not self.isMutable():
             raise TypeError("Frame not mutable.")
 
-        self.modified = True
+        if not self.isModified():
+            self.setModified()
+        else:
+            if frame != self.getFrame():
+                raise ValueError("Frame already set and not equal with new one.")
         self.payload[1] = frame
+
+    def setModified(self):
+        """set self.modified to true"""
+        self.modified = True
 
     def setNode(self, node):
         """Sets the node number of current frame (0-255).
