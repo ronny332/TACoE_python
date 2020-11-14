@@ -8,7 +8,7 @@ from config import config as config
 
 #
 #  Data Frame Scheme:
-#  analogue: [Node Number|1 byte|0-FF] [Frame Number|1 byte|1-4] [val1-4|2 bytes each|LE16] [unit val1-4|1 byte each|0-FF]
+#  analogue: [Node Number|1 byte|0-FF] [Frame Number|1 byte|1-8] [val1-4|2 bytes each|LE16] [unit val1-4|1 byte each|0-FF]
 #  digital:  [Node Number|1 byte|0-FF] [Map Number|1 byte|0x0 or 0x9] [val1-16|4 bytes|binary]
 
 
@@ -22,19 +22,27 @@ class Frame(object):
     rawdataLength = 14
     timestamp = None
 
-    def __init__(self, payload):
+    def __init__(self, payload=False):  # sourcery skip: remove-redundant-if
         super().__init__()
 
-        if not isinstance(payload, bytes) or len(payload) != self.rawdataLength:
+        if payload != False and (not isinstance(payload, bytes) or len(payload) != self.rawdataLength):
             raise TypeError("invalid type or wrong length of raw data.")
 
-        self.payload = payload
         self.timestamp = time()
 
-        if config["modules"]["frame"]["debug"]:
-            logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
-        if config["modules"]["frame"]["bell"]:
-            asyncio.run(self.bell())
+        if payload:
+            self.payload = payload
+
+            if config["modules"]["frame"]["debug"]:
+                logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
+            if config["modules"]["frame"]["bell"]:
+                asyncio.run(self.bell())
+        else:
+            self.payload = bytearray(self.rawdataLength)
+
+            if config["modules"]["frame"]["debug"]:
+                logging.debug(f"Frame with {self.rawdataLength} empty bytes created.")
+                logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
 
     def __str__(self):
         """string representation of payload
@@ -45,9 +53,29 @@ class Frame(object):
         return self.getString(verbose=False)
 
     async def bell(self):
+        """writes a bell symbol to the shell prompt, if shell is enabled as module."""
         sys.stdout.write("\r🔔> ")
         await asyncio.sleep(1 / 4)
         sys.stdout.write("\r  > ")
+
+    def get16BitIntFromAnalogueValue(self, value, decimals):
+        """creates an TACoE compatible integer value for given value and decimals.
+
+        Raises:
+            ValueError: calculated value needs to be between 0 and 65535
+
+        Returns:
+            integer: 0-65535 (16bit)
+        """
+        if (
+            (not isinstance(value, int) and not isinstance(value, float))
+            or not isinstance(decimals, int)
+            or decimals not in range(3)
+            or int(value * pow(10, decimals)) not in range(65536)
+        ):
+            raise ValueError("calculated value needs to be between 0 and 65535")
+
+        return int(value * pow(10, decimals))
 
     def getAnalogue(self, index):
         """generate (raw) analogue values from 2 8 bit represenations at index (1-4), read as 16LE
@@ -161,6 +189,31 @@ class Frame(object):
         """
         return int(self.timestamp)
 
+    def getTupleForIndex(self, index, analogue=False, digital=False):
+        """creates a tuple for (index, frame) from external index value and anlogue/digital decision.
+
+        Args:
+            index (integer): index value
+            analogue (bool, optional): index is of analogue type. Defaults to False.
+            digital (bool, optional): index is of digital type. Defaults to False.
+
+        Raises:
+            ValueError: wrong value for index.
+
+        Returns:
+            tuple: (index, frame)
+        """
+        if analogue:
+            if index not in range(1, 17):
+                raise ValueError("analogue index has to be between 1 and 16")
+            return (int((index - 1) % 4) + 1, int((index - 1) / 4) + 1)
+        elif digital:
+            if index not in range(1, 33):
+                raise ValueError("digital index has to be between 1 and 32")
+            return (int((index - 1) % 16) + 1, 0 if int(index) < 17 else 9)
+        else:
+            return False
+
     def isAnalogue(self):
         """detects if frame is has analogue data.
         analogue frames have a number of 1,2,3 or 4.
@@ -168,7 +221,7 @@ class Frame(object):
         Returns:
             bool: data is analogue or not
         """
-        return self.payload[1] in range(1, 5)
+        return self.payload[1] in range(1, 9)
 
     def isDigital(self):
         """the opposite of isAnaloge
@@ -178,6 +231,14 @@ class Frame(object):
             bool: data is digital or not
         """
         return not self.isAnalogue()
+
+    def isEmpty(self):
+        """checks if the payload has any non zero entries
+
+        Returns:
+            bool: is empty or not
+        """
+        return not any(self.payload)
 
     def isMapped(self):
         """return False for first value mapping, True for second value mapping
@@ -193,3 +254,106 @@ class Frame(object):
             bool: False = low/1st value level, True = high/2nd value level
         """
         return self.payload[1] == self.highMapping
+
+    def isMutable(self):
+        """only bytearrays are muteable, bytes instances aren't
+
+        Returns:
+            bool: payload/frame data can be modified
+        """
+        return isinstance(self.payload, bytearray)
+
+    def setAnalogue(self, index, frame, value):
+        if index not in range(1, 5) and frame not in range(1, 9) and value not in range(65536):
+            raise ValueError("invalid input.")
+
+        self.setFrame(frame)
+        self.setValueAtIndex(index, value)
+
+    def setFrame(self, frame):
+        """Set the frame to value between 0 and 9
+        0 and 9 means digital frame
+        1-8 means analogue
+
+        Args:
+            frame (integer: frame number
+
+        Raises:
+            ValueError: frame number has to be between 0 and 9.
+            TypeError: Frame not mutable.
+        """
+        if frame not in range(10):
+            raise ValueError("frame number has to be between 0 and 9.")
+        if not self.isMutable():
+            raise TypeError("Frame not mutable.")
+
+        self.payload[1] = frame
+
+    def setValueAtIndex(self, index, value):
+        if not self.isAnalogue():
+            raise TypeError("Frame is not of type analogue.")
+        if not self.isMutable():
+            raise TypeError("Frame not mutable.")
+        if index not in range(1, 5):
+            raise ValueError("Index has to be between 1 and 4.")
+        if value not in range(65536):
+            raise ValueError("Value has to be between 0 and 65535.")
+
+        self.payload[2 + index] = 4
+        # TODO (1245427).to_bytes(3, byteorder='little')
+
+    def setNode(self, node):
+        """Sets the node number of current frame (0-255).
+
+        Args:
+            node (integer): node number
+
+        Raises:
+            ValueError: node number has to be between 0 and 255.
+            TypeError: Frame not mutable.
+        """
+        if node not in range(256):
+            raise ValueError("node number has to be between 0 and 255.")
+        if not self.isMutable():
+            raise TypeError("Frame not mutable.")
+
+        self.payload[0] = node
+
+    def setValue(self, node, index, value, decimals=0, analogue=False, digital=False):
+        if node not in range(256):
+            raise ValueError("node has to be between 0 and 255")
+        if analogue:  # analogue
+            type = "analogue"
+            if isinstance(value, str):
+                value = float(value)
+
+            if index not in range(1, 17):
+                raise ValueError("index has to be between 1 and 16 for analogue frames")
+            if int(value) not in range(pow(2, 16)):
+                raise ValueError("value has to be integer value between 0 and 65535")
+            if decimals not in range(3):
+                raise ValueError("decimals have to be between 0 and 2")
+        elif digital:  # digital
+            type = "digital"
+
+            if index not in range(1, 33):
+                raise ValueError("index has to be between 1 and 32 for digital frames")
+            if value not in range(2) and value not in [True, False]:
+                raise ValueError("value has to be a boolean value for digital values")
+        else:
+            raise ValueError("either analogue or digital have to be true.")
+
+        if type is "analogue":
+            rawValue = self.get16BitIntFromAnalogueValue(value, decimals)
+            (rawIndex, rawFrame) = self.getTupleForIndex(index, analogue=True)
+
+            self.setNode(node)
+            self.setAnalogue(rawIndex, rawFrame, rawValue)
+
+            print(rawIndex, rawFrame, rawValue)
+        else:
+            rawValue = 1 if value else 0
+            (rawIndex, rawFrame) = self.getTupleForIndex(index, digital=True)
+
+            print(rawIndex, rawFrame, rawValue)
+            print(self.getTupleForIndex(index, digital=True))
