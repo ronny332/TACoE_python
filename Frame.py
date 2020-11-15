@@ -16,34 +16,34 @@ class Frame(object):
 
     highMapping = 0b1001  # 0x09, at least "frame" 9
     modified = False
-    payload = None
+    rawData = None
     rawdataLength = 14
     timestamp = None
-
-    def __init__(self, payload=False):  # sourcery skip: remove-redundant-if
+>
+    def __init__(self, rawData=False):  # sourcery skip: remove-redundant-if
         super().__init__()
 
-        if payload != False and (not isinstance(payload, bytes) or len(payload) != self.rawdataLength):
+        if rawData != False and (not isinstance(rawData, bytes) or len(rawData) != self.rawdataLength):
             raise TypeError("invalid type or wrong length of raw data.")
 
         self.timestamp = time()
 
-        if payload:
-            self.payload = payload
+        if rawData:
+            self.rawData = rawData
 
             if config["frame"]["debug"]:
                 logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
             if config["frame"]["bell"]:
                 asyncio.run(self.bell())
         else:
-            self.payload = bytearray(self.rawdataLength)
+            self.rawData = bytearray(self.rawdataLength)
 
             if config["frame"]["debug"]:
                 logging.debug(f"Frame with {self.rawdataLength} empty bytes created.")
                 logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
 
     def __str__(self):
-        """string representation of payload
+        """string representation of rawData
 
         Returns:
             string: string representation
@@ -91,18 +91,18 @@ class Frame(object):
         return (
             self.getNode(),
             self.getIndex(index, True),
-            self.payload[index * 2 + 1] << 8 | self.payload[index * 2],
-            self.payload[9 + index],
+            self.rawData[index * 2 + 1] << 8 | self.rawData[index * 2],
+            self.rawData[9 + index],
             self.timestamp,
         )
 
     def getData(self):
-        """bytes version of self.payload
+        """bytes version of self.rawData
 
         Returns:
             bytes: data representation
         """
-        return bytes(self.payload)
+        return bytes(self.rawData)
 
     def getDigital(self, index):
         """get digital bool value for index.
@@ -119,19 +119,19 @@ class Frame(object):
         index = self.getIndex(index, False)
 
         indexAsBits = 1 << ((index - 1) % 16)
-        num = self.payload[3] << 8 | self.payload[2]
+        num = self.rawData[3] << 8 | self.rawData[2]
 
         return (self.getNode(), index, num & indexAsBits == indexAsBits, self.timestamp)
 
     def getFrame(self):
-        """second byte of self.payload is frame number, don't use on digital frame data.
+        """second byte of self.rawData is frame number, don't use on digital frame data.
         For digital frames this method returns 0 for "low" and 9 for "high"
 
         Returns:
             int: frame number
         """
 
-        return int(self.payload[1])
+        return int(self.rawData[1])
 
     def getIndex(self, index, analogue=True):
         """get the value number (position) as integer (1-32)
@@ -155,26 +155,26 @@ class Frame(object):
         return index
 
     def getNode(self):
-        """first byte of self.payload is node number
+        """first byte of self.rawData is node number
 
         Returns:
             int: node number
         """
 
-        return int(self.payload[0])
+        return int(self.rawData[0])
 
     def getString(self, verbose=False):
-        """create string representation of self.payload
+        """create string representation of self.rawData
 
         Returns:
-            string: from self.payload
+            string: from self.rawData
         """
 
         if verbose:
             return f"{datetime.datetime.fromtimestamp(self.timestamp)} " + "".join(
                 map(
                     lambda p, i: "[b%(i)d:%(p)02xh|%(p)03dd] " % {"i": i, "p": int(p)},
-                    self.payload,
+                    self.rawData,
                     range(self.rawdataLength),
                 )
             )
@@ -182,7 +182,7 @@ class Frame(object):
             return "".join(
                 map(
                     lambda p, i: "[%(p)02xh]" % {"p": int(p)},
-                    self.payload,
+                    self.rawData,
                     range(self.rawdataLength),
                 )
             )
@@ -227,7 +227,7 @@ class Frame(object):
         Returns:
             bool: data is analogue or not
         """
-        return self.payload[1] in range(1, 9)
+        return self.rawData[1] in range(1, 9)
 
     def isDigital(self):
         """the opposite of isAnaloge
@@ -239,12 +239,12 @@ class Frame(object):
         return not self.isAnalogue()
 
     def isEmpty(self):
-        """checks if the payload has any non zero entries
+        """checks if the rawData has any non zero entries
 
         Returns:
             bool: is empty or not
         """
-        return not any(self.payload)
+        return not any(self.rawData)
 
     def isMapped(self):
         """return False for first value mapping, True for second value mapping
@@ -259,7 +259,7 @@ class Frame(object):
         Returns:
             bool: False = low/1st value level, True = high/2nd value level
         """
-        return self.payload[1] == self.highMapping
+        return self.rawData[1] == self.highMapping
 
     def isModified(self):
         """currently just simple wrapper for self.modified
@@ -273,9 +273,9 @@ class Frame(object):
         """only bytearrays are muteable, bytes instances aren't
 
         Returns:
-            bool: payload/frame data can be modified
+            bool: rawData/frame data can be modified
         """
-        return isinstance(self.payload, bytearray)
+        return isinstance(self.rawData, bytearray)
 
     def setAnalogue(self, frame, index, value):
         """sets the analogue value. value has to be already been recalculated to plain integer value.
@@ -341,7 +341,7 @@ class Frame(object):
         else:
             if frame != self.getFrame():
                 raise ValueError("Frame already set and not equal with new one.")
-        self.payload[1] = frame
+        self.rawData[1] = frame
 
     def setModified(self):
         """set self.modified to true"""
@@ -364,7 +364,7 @@ class Frame(object):
         if not self.isMutable():
             raise TypeError("Frame not mutable.")
 
-        self.payload[0] = node
+        self.rawData[0] = node
 
     def setTimestamp(self):
         """timestamp to property"""
@@ -386,7 +386,7 @@ class Frame(object):
         if not self.isAnalogue():
             raise TypeError("Only analogue type has units.")
 
-        self.payload[9 + index] = unit
+        self.rawData[9 + index] = unit
 
     def setValue(self, node, index, value, decimals=0, analogue=False, digital=False):
         """set analogue or digital values at node/index/frame. Frame gets calculated
@@ -463,11 +463,11 @@ class Frame(object):
         lowByte = 0xFF & indexAsBits
 
         if value is 1:
-            self.payload[2] |= lowByte
-            self.payload[3] |= highByte
+            self.rawData[2] |= lowByte
+            self.rawData[3] |= highByte
         else:
-            self.payload[2] ^= lowByte
-            self.payload[3] ^= highByte
+            self.rawData[2] ^= lowByte
+            self.rawData[3] ^= highByte
 
         # TODO
 
@@ -493,6 +493,6 @@ class Frame(object):
         if value not in range(65536):
             raise ValueError("Value has to be between 0 and 65535.")
 
-        self.payload[index * 2] = (value & 0xFF).to_bytes(1, byteorder="little")[0]
-        self.payload[index * 2 + 1] = (value >> 8 & 0xFF).to_bytes(1, byteorder="little")[0]
+        self.rawData[index * 2] = (value & 0xFF).to_bytes(1, byteorder="little")[0]
+        self.rawData[index * 2 + 1] = (value >> 8 & 0xFF).to_bytes(1, byteorder="little")[0]
         self.setUnit(index, unit=1)  # just 1 for °C for now, rest TODO
