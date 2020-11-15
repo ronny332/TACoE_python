@@ -8,7 +8,7 @@ from config import config as config
 
 #  Data Frame Scheme:
 #  analogue: [Node Number|1 byte|0-FF] [Frame Number|1 byte|1-8] [val1-4|2 bytes each|LE16] [unit val1-4|1 byte each|0-FF]
-#  digital:  [Node Number|1 byte|0-FF] [Map Number|1 byte|0x0 or 0x9] [val1-16|4 bytes|binary]
+#  digital:  [Node Number|1 byte|0-FF] [Map Number|1 byte|0x0 or 0x9] [val1-16|2 bytes|binary]
 class Frame(object):
     """
     stores and handles CoE raw data, received from an UDP call
@@ -270,6 +270,17 @@ class Frame(object):
         return isinstance(self.payload, bytearray)
 
     def setAnalogue(self, frame, index, value):
+        """sets the analogue value. value has to be already been recalculated to plain integer value.
+
+        Args:
+            frame (int): frame number
+            index (int): index number
+            value (int): value as integer
+
+        Raises:
+            ValueError: invalid input.
+            ValueError: Frame number already set, can't use a different one with the same frame.
+        """
         if index not in range(1, 5) and frame not in range(1, 9) and value not in range(65536):
             raise ValueError("invalid input.")
 
@@ -279,9 +290,30 @@ class Frame(object):
             self.setFrame(frame)
         self.setValueAtIndex(index, value)
 
+    def setDigital(self, frame, index, value):
+        """sets the digital value. value has to be already been recalculated to plain integer value [0, 1].
+
+        Args:
+            frame (int): frame number
+            index (int): index number
+            value (int): value as integer ([0, 1])
+
+        Raises:
+            ValueError: invalid input.
+            ValueError: Frame number already set, can't use a different one with the same frame.
+        """
+        if index not in range(1, 17) and frame not in [0, 9] and value not in [0, 1]:
+            raise ValueError("invalid input.")
+
+        if self.isModified() and frame != self.getFrame():
+            raise ValueError("Frame number already set, can't use a different one with the same frame.")
+        elif not self.isModified():
+            self.setFrame(frame)
+        self.setValueAtBit(index, value)
+
     def setFrame(self, frame):
         """Set the frame to value between 0 and 9
-        0 and 9 means digital frame
+        0 and 9 means digital frame (0 = low mapping, 9 = high mapping)
         1-8 means analogue
 
         Args:
@@ -319,6 +351,8 @@ class Frame(object):
         """
         if node not in range(256):
             raise ValueError("node number has to be between 0 and 255.")
+        if self.getNode() not in [0, node]:
+            raise ValueError("Node value already set, create a new frame with another value.")
         if not self.isMutable():
             raise TypeError("Frame not mutable.")
 
@@ -347,62 +381,87 @@ class Frame(object):
         self.payload[9 + index] = unit
 
     def setValue(self, node, index, value, decimals=0, analogue=False, digital=False):
-        """TODO
+        """set analogue or digital values at node/index/frame. Frame gets calculated
+        automatically from index value.
 
         Args:
-            node ([type]): [description]
-            index ([type]): [description]
-            value ([type]): [description]
-            decimals (int, optional): [description]. Defaults to 0.
-            analogue (bool, optional): [description]. Defaults to False.
-            digital (bool, optional): [description]. Defaults to False.
+            node (int): node number
+            index (int): index number
+            value (str/int/float): value to stored, is internally stored as plain integer.
+            decimals (int, optional): decimals of analogue values Defaults to 0.
+            analogue (bool, optional): value is analogue. Defaults to False.
+            digital (bool, optional): value is digital. Defaults to False.
 
         Raises:
-            ValueError: [description]
-            ValueError: [description]
-            ValueError: [description]
-            ValueError: [description]
-            ValueError: [description]
-            ValueError: [description]
-            ValueError: [description]
+            ValueError: node has to be between 0 and 255.
+            ValueError: index has to be between 1 and 16 for analogue frames.
+            ValueError: value has to be integer value between 0 and 65535.
+            ValueError: decimals have to be between 0 and 2.
+            ValueError: index has to be between 1 and 32 for digital frames.
+            ValueError: value has to be a boolean value for digital values.
+            ValueError: either analogue or digital have to be true.
         """
         if node not in range(256):
-            raise ValueError("node has to be between 0 and 255")
+            raise ValueError("node has to be between 0 and 255.")
         if analogue:  # analogue
             type = "analogue"
             if isinstance(value, str):
                 value = float(value)
 
             if index not in range(1, 17):
-                raise ValueError("index has to be between 1 and 16 for analogue frames")
+                raise ValueError("index has to be between 1 and 16 for analogue frames.")
             if int(value) not in range(pow(2, 16)):
-                raise ValueError("value has to be integer value between 0 and 65535")
+                raise ValueError("value has to be integer value between 0 and 65535.")
             if decimals not in range(3):
-                raise ValueError("decimals have to be between 0 and 2")
+                raise ValueError("decimals have to be between 0 and 2.")
         elif digital:  # digital
             type = "digital"
 
             if index not in range(1, 33):
-                raise ValueError("index has to be between 1 and 32 for digital frames")
+                raise ValueError("index has to be between 1 and 32 for digital frames.")
             if value not in range(2) and value not in [True, False]:
-                raise ValueError("value has to be a boolean value for digital values")
+                raise ValueError("value has to be a boolean value for digital values.")
         else:
             raise ValueError("either analogue or digital have to be true.")
+
+        self.setNode(node)
 
         if type is "analogue":
             rawValue = self.get16BitIntFromAnalogueValue(value, decimals)
             (rawIndex, rawFrame) = self.getTupleForIndex(index, analogue=True)
 
-            self.setNode(node)
             self.setAnalogue(rawFrame, rawIndex, rawValue)
-
-            print(rawIndex, rawFrame, rawValue)
         else:
             rawValue = 1 if value else 0
             (rawIndex, rawFrame) = self.getTupleForIndex(index, digital=True)
 
-            print(rawIndex, rawFrame, rawValue)
-            print(self.getTupleForIndex(index, digital=True))
+            self.setDigital(rawFrame, rawIndex, rawValue)
+
+    def setValueAtBit(self, index, value):
+        """bitwise setter for binary values
+
+        Args:
+            index (index): index of frame
+            value (int): [0, 1] binary value
+
+        Raises:
+            ValueError: Index has to be between 1 and 16, for values 17 to 32 use high mapping.
+        """
+        if index not in range(1, 17):
+            raise ValueError("Index has to be between 1 and 16, for values 17 to 32 use high mapping.")
+        indexAsBits = 1 << ((index - 1) % 16)
+
+        highByte = indexAsBits >> 8 & 0xFF
+        lowByte = 0xFF & indexAsBits
+
+        if value is 1:
+            self.payload[2] |= lowByte
+            self.payload[3] |= highByte
+        else:
+            self.payload[2] ^= lowByte
+            self.payload[3] ^= highByte
+
+        # TODO
 
     def setValueAtIndex(self, index, value):
         """TODO only for analogue values
