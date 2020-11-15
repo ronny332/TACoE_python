@@ -87,13 +87,13 @@ class Data(threading.Thread):
                 for sIndex in data[sNode].keys():
                     index_renewed = f"{sNode}-{sIndex}"
                     if index_renewed not in self.renewed:
-                        self.renewed[index_renewed] = timestamp - config["modules"]["data"]["renew"] - 1
+                        self.renewed[index_renewed] = timestamp - config["data"]["renew"] - 1
                     if "value" not in data[sNode][sIndex] or "value" not in self.last[type][sNode][sIndex]:
                         continue
                     if (
                         sNode not in data
                         or data[sNode][sIndex]["value"] != self.last[type][sNode][sIndex]["value"]
-                        or self.renewed[index_renewed] < timestamp - config["modules"]["data"]["renew"]
+                        or self.renewed[index_renewed] < timestamp - config["data"]["renew"]
                     ):
                         diff.append(
                             [
@@ -273,7 +273,7 @@ class Data(threading.Thread):
     def run(self):
         """run the Data thread"""
         while True:
-            sleep(config["modules"]["data"]["save"])
+            sleep(config["data"]["save"])
             self.save()
 
     def save(self):

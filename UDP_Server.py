@@ -41,10 +41,8 @@ class UDP_Server(threading.Thread):
         )
 
     def initialize(self):
-        """get needed instances from local classes
-        """
+        """get needed instances from local classes"""
         self.fhem = FHEM.FHEM.getInstance()
-
 
     def getFrames(self):
         """return frames object
@@ -69,8 +67,18 @@ class UDP_Server(threading.Thread):
                 except TypeError as type_error:
                     logging.error(type_error)
 
+    def sendFrame(self, frame):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            ip = config["udp_server"]["cmi_ip"]
+            port = config["udp_server"]["cmi_port"]
+            sFrame = frame.getString()
+
+            s.sendto(frame.getData(), (ip, port))
+            sFrame = frame.getString()
+
+            logging.debug(f"sent frame {sFrame} to udp://{ip}:{port}")
+
     def sendUpdate(self):
-        """sets update event to true
-        """
-        if config["modules"]["fhem"]["enabled"] and config["modules"]["fhem"]["receiveUpdates"]:
+        """sets update event to true"""
+        if config["fhem"]["enabled"] and config["fhem"]["receiveUpdates"]:
             self.fhem.getUpdateEvent().set()

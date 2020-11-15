@@ -52,10 +52,10 @@ class FHEM(threading.Thread):
 
         if con:
             if self.isPrompt(con):
-                alias = config["modules"]["fhem"]["alias"]
-                device = config["modules"]["fhem"]["device"]
-                group = config["modules"]["fhem"]["group"]
-                room = config["modules"]["fhem"]["room"]
+                alias = config["fhem"]["alias"]
+                device = config["fhem"]["device"]
+                group = config["fhem"]["group"]
+                room = config["fhem"]["room"]
 
                 cmd = f"define {device} dummy\nattr {device} event-on-change-reading .*\n"
                 cmd += f"attr {device} alias {alias}\n" if alias else ""
@@ -98,9 +98,9 @@ class FHEM(threading.Thread):
             s.recv(32768)
 
         con.write(b"\n")
-        r = con.read_until(bytes(config["modules"]["fhem"]["prompt"], encoding="utf-8"))
+        r = con.read_until(bytes(config["fhem"]["prompt"], encoding="utf-8"))
 
-        return r.decode(encoding="utf-8") == config["modules"]["fhem"]["prompt"]
+        return r.decode(encoding="utf-8") == config["fhem"]["prompt"]
 
     def openConnection(self):
         """creates new telnet connection
@@ -108,14 +108,14 @@ class FHEM(threading.Thread):
         Returns:
             connection: telnet connection
         """
-        host = config["modules"]["fhem"]["host"]
-        port = config["modules"]["fhem"]["port"]
+        host = config["fhem"]["host"]
+        port = config["fhem"]["port"]
 
         logging.debug(f"opening telnet connection to {host}:{port}")
         return Telnet(
             host,
             port,
-            timeout=config["modules"]["fhem"]["timeout"],
+            timeout=config["fhem"]["timeout"],
         )
 
     def run(self):
@@ -136,9 +136,9 @@ class FHEM(threading.Thread):
         con.write(bytes(cmd + "\n\n", encoding="utf-8"))
 
     def sendUpdates(self):
-        if config["modules"]["fhem"]["createDevice"]:
+        if config["fhem"]["createDevice"]:
             self.createDevice()
-            config["modules"]["fhem"]["createDevice"] = False
+            config["fhem"]["createDevice"] = False
 
         # print(self.data.getDifference(analogue=True))
         # print(self.data.getDifference(digital=True))
@@ -153,7 +153,7 @@ class FHEM(threading.Thread):
             con = self.openConnection()
 
             if con and self.isPrompt(con):
-                device = config["modules"]["fhem"]["device"]
+                device = config["fhem"]["device"]
 
                 for d in data_analogue:
                     cmd = f"setreading {device} {self.data.getReadingsName(d[0], d[1], analogue=True)} {d[3]}"

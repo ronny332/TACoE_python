@@ -31,14 +31,14 @@ class Frame(object):
         if payload:
             self.payload = payload
 
-            if config["modules"]["frame"]["debug"]:
+            if config["frame"]["debug"]:
                 logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
-            if config["modules"]["frame"]["bell"]:
+            if config["frame"]["bell"]:
                 asyncio.run(self.bell())
         else:
             self.payload = bytearray(self.rawdataLength)
 
-            if config["modules"]["frame"]["debug"]:
+            if config["frame"]["debug"]:
                 logging.debug(f"Frame with {self.rawdataLength} empty bytes created.")
                 logging.debug(f'Frame {self.getString(verbose=config["debug"]["verbose"])}')
 
@@ -95,6 +95,14 @@ class Frame(object):
             self.payload[9 + index],
             self.timestamp,
         )
+
+    def getData(self):
+        """bytes version of self.payload
+
+        Returns:
+            bytes: data representation
+        """
+        return bytes(self.payload)
 
     def getDigital(self, index):
         """get digital bool value for index.
