@@ -19,7 +19,7 @@ class Frame(object):
     rawData = None
     rawdataLength = 14
     timestamp = None
->
+
     def __init__(self, rawData=False):  # sourcery skip: remove-redundant-if
         super().__init__()
 

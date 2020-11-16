@@ -75,7 +75,7 @@ class Shell(threading.Thread):
                             "\th(help):\t\tshow this help",
                             "\tlf(last frame):\t\tshow last frame",
                             "\tr(restore):\t\trestore saved frames",
-                            "\ts(save):\t\tsave available frames",
+                            "\tw(write):\t\tsave available frames",
                         ]
                     )
                 )
@@ -85,7 +85,7 @@ class Shell(threading.Thread):
                 print(f"{self.frames[-1].getString(verbose=True)}")
             elif cmd in ["r", "restore"]:
                 self.data.restore()
-            elif cmd in ["s", "save"]:
+            elif cmd in ["w", "write"]:
                 self.data.save()
             else:
                 print("invalid command")
