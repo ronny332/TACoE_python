@@ -45,14 +45,6 @@ class UDP_Server(threading.Thread):
         self.data = Data.Data.getInstance()
         self.fhem = FHEM.FHEM.getInstance()
 
-    def getFrames(self):
-        """return frames object
-
-        Returns:
-            queue: frames object
-        """
-        return self.data_frames
-
     def run(self):
         """run the UDP_Server thread"""
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
