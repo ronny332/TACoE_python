@@ -56,7 +56,34 @@ class Control(threading.Thread):
             cmd (str): command to run
             write_to_stream ([func): function to write output to
         """
-        if len(self.data_frames) > 0:
+        if cmd in ["q", "quit"]:
+            res = "quit."
+            if write_to_stream is print:
+                print(res)
+                os._exit(0)
+            else:
+                write_to_stream(res)
+        elif cmd in ["h", "help"]:
+            write_to_stream(
+                "\n".join(
+                    [
+                        "help:",
+                        "  a\t[analogue] all analogue values (JSON)",
+                        "  d\t[digital] all digital values (JSON)",
+                        "  ar\t[analogue] all analogue raw values (JSON)",
+                        "  da\t[diff analogue] differences of analogue values since last call (JSON)",
+                        "  dd\t[diff digital] differences of digital values since last call (JSON)",
+                        "  dr\t[digital] all digital raw values (JSON)",
+                        "  f\t[frames] show all available frames",
+                        "  h\t[help] tshow this help",
+                        "  lf\t[last frame):\t\tshow last frame",
+                        "  r\t[restore] restore saved frames",
+                        "  s\t[send] send command",
+                        "  w\t[write] write available frames to disc",
+                    ]
+                )
+            )
+        elif len(self.data_frames) > 0:
             if cmd in ["a", "analogue"]:
                 write_to_stream(json.dumps(self.data.getValues(analogue=True)))
             elif cmd in ["c", "clean"]:
@@ -76,33 +103,6 @@ class Control(threading.Thread):
                 for f in reversed(self.data_frames):
                     write_to_stream(f.getString(verbose=True))
                 write_to_stream(f"({len(self.data_frames)} frames)")
-            elif cmd in ["h", "help"]:
-                write_to_stream(
-                    "\n".join(
-                        [
-                            "help:",
-                            "  a\t[analogue] all analogue values (JSON)",
-                            "  d\t[digital] all digital values (JSON)",
-                            "  ar\t[analogue] all analogue raw values (JSON)",
-                            "  da\t[diff analogue] differences of analogue values since last call (JSON)",
-                            "  dd\t[diff digital] differences of digital values since last call (JSON)",
-                            "  dr\t[digital] all digital raw values (JSON)",
-                            "  f\t[frames] show all available frames",
-                            "  h\t[help] tshow this help",
-                            "  lf\t[last frame):\t\tshow last frame",
-                            "  r\t[restore] restore saved frames",
-                            "  s\t[send] send command",
-                            "  w\t[write] write available frames to disc",
-                        ]
-                    )
-                )
-            elif cmd in ["q", "quit"]:
-                res = "quit."
-                if write_to_stream is print:
-                    print(res)
-                    os._exit(0)
-                else:
-                    write_to_stream(res)
             elif cmd in ["lf", "last frame"]:
                 write_to_stream(f"{self.data_frames[-1].getString(verbose=True)}")
             elif cmd in ["r", "restore"]:
@@ -132,36 +132,39 @@ class Control(threading.Thread):
         self.executor.shutdown(wait=False)
 
     def run_shell(self):
-        """shell thread
-        """
+        """shell thread"""
+        sleep(1)
+        logging.debug("Control/Shell initialized.")
+
         while True:
             self.command(input(config["control"]["prompt"]), print)
 
     def run_telnet(self):
-        """telnet thread
-        """
+        """telnet thread"""
         try:
             with socket.create_server(("", config["control"]["telnet_port"])) as s:
                 s.listen(1)
+                logging.debug("Control/Telnet initialized, listening on port udp://:" + str(config["control"]["telnet_port"]) + ".")
 
                 while True:
                     conn, _ = s.accept()
-                    while True:
+
+                    def write_to_stream(res):
+                        if res:
+                            if res == "quit.":
+                                conn.send((res + "\r\n").encode())
+                                conn.close()
+                            else:
+                                lines = str(res).split("\n")
+                                for l in lines:
+                                    conn.send((l + "\r\n").encode())
+                                conn.send(config["control"]["prompt"].encode())
+
+                    while conn.fileno() > 0:
                         data = conn.recv(1024)
 
                         if not data:
                             conn.close()
-
-                        def write_to_stream(res):
-                            if res:
-                                if res == "quit.":
-                                    conn.send((res + "\r\n").encode())
-                                    conn.close()
-                                else:
-                                    lines = str(res).split("\n")
-                                    for l in lines:
-                                        conn.send((l + "\r\n").encode())
-                                    conn.send(config["control"]["prompt"].encode())
 
                         self.command(data.decode("utf-8").strip(), write_to_stream)
         except Exception as e:
