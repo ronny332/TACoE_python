@@ -3,10 +3,11 @@ import logging
 import socket
 import threading
 
+import Data
+import FHEM
+
 from config import config
 from Frame import Frame
-
-import FHEM
 
 
 class UDP_Server(threading.Thread):
@@ -17,8 +18,9 @@ class UDP_Server(threading.Thread):
     __instance = None
 
     callback = None
+    data = None
+    data_frames = None
     fhem = None
-    frames = deque(maxlen=config["udp_server"]["fifo_length"])
     udp_port = config["udp_server"]["udp_port"]
 
     @staticmethod
@@ -36,12 +38,11 @@ class UDP_Server(threading.Thread):
         else:
             UDP_Server.__instance = self
 
-        logging.debug(
-            f"UDP server initiated with fifo size of {self.frames.maxlen} frames, listening on UDP port {self.udp_port}"
-        )
+        logging.debug(f"UDP server initiated, listening on UDP port {self.udp_port}")
 
     def initialize(self):
         """get needed instances from local classes"""
+        self.data = Data.Data.getInstance()
         self.fhem = FHEM.FHEM.getInstance()
 
     def getFrames(self):
@@ -50,7 +51,7 @@ class UDP_Server(threading.Thread):
         Returns:
             queue: frames object
         """
-        return self.frames
+        return self.data_frames
 
     def run(self):
         """run the UDP_Server thread"""
@@ -61,7 +62,7 @@ class UDP_Server(threading.Thread):
                 data, _ = s.recvfrom(Frame.rawdataLength)
                 try:
                     frame = Frame(data)
-                    self.frames.append(frame)
+                    self.data_frames.append(frame)
                     self.sendUpdate()
 
                 except TypeError as type_error:

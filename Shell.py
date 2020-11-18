@@ -1,12 +1,15 @@
 import json
 import multiprocessing
 import os
+import re
 import threading
 
 from time import sleep
 
 import Data
 import UDP_Server
+
+from Frame import Frame
 
 
 class Shell(threading.Thread):
@@ -15,9 +18,9 @@ class Shell(threading.Thread):
     """
 
     __instance = None
+    cmds = {"send": None}
     data = None
-    frames = None
-    udp_server = None
+    data_frames = None
 
     @staticmethod
     def getInstance():
@@ -37,11 +40,10 @@ class Shell(threading.Thread):
     def initialize(self):
         """get needed instances from local classes"""
         self.data = Data.Data.getInstance()
-        self.udp_server = UDP_Server.UDP_Server.getInstance()
-        self.frames = self.udp_server.getFrames()
+        self.data_frames = self.data.getFrames()
 
     def command(self, cmd):
-        if len(self.frames) > 0:
+        if len(self.data_frames) > 0:
             if cmd in ["a", "analogue"]:
                 print(json.dumps(self.data.getValues(analogue=True)))
             elif cmd in ["c", "clean"]:
@@ -58,9 +60,9 @@ class Shell(threading.Thread):
             elif cmd in ["dr", "digital raw"]:
                 print(json.dumps(self.data.getRawValues(digital=True)))
             elif cmd in ["f", "frames"]:
-                for f in reversed(self.frames):
+                for f in reversed(self.data_frames):
                     print(f.getString(verbose=True))
-                print(f"({len(self.frames)} frames)")
+                print(f"({len(self.data_frames)} frames)")
             elif cmd in ["h", "help"]:
                 print(
                     "\n".join(
@@ -75,16 +77,22 @@ class Shell(threading.Thread):
                             "\th(help):\t\tshow this help",
                             "\tlf(last frame):\t\tshow last frame",
                             "\tr(restore):\t\trestore saved frames",
-                            "\tw(write):\t\tsave available frames",
+                            "\ts(send):\t\tsend command",
+                            "\tw(write):\t\\write available frames to disc",
                         ]
                     )
                 )
             elif cmd in ["q", "quit"]:
                 os._exit(1)
             elif cmd in ["lf", "last frame"]:
-                print(f"{self.frames[-1].getString(verbose=True)}")
+                print(f"{self.data_frames[-1].getString(verbose=True)}")
             elif cmd in ["r", "restore"]:
                 self.data.restore()
+            elif cmd.startswith("s ") or cmd.startswith("send "):
+                try:
+                    self.send(cmd)
+                except ValueError as e:
+                    print(e)
             elif cmd in ["w", "write"]:
                 self.data.save()
             else:
@@ -96,3 +104,30 @@ class Shell(threading.Thread):
         """run the Shell thread"""
         while True:
             self.command(input("  > "))
+
+    def send(self, cmd):
+        if self.cmds["send"] is None:
+            self.cmds["send"] = re.compile(
+                r"^(?:s|save)\s((?P<analogue>a)|(?P<digital>d))\s"
+                r"(?P<node>[0-9]+)\s(?P<index>[0-9]+)\s"
+                r"(?(analogue)(?P<aValue>[0-9.]+)|(?P<dValue>[0-1]))\s?"
+                r"(?(analogue)(?P<decimals>[0-9])+)$"
+            )
+
+        if not self.send_command(cmd):
+            raise ValueError('command has wrong syntax. use e.g. "send a 54 15 22.3 1" for analogue requests.')
+
+    def send_command(self, cmd):
+        if self.cmds["send"]:
+            m = self.cmds["send"].match(cmd)
+            if m:
+                print(m.groupdict())
+
+                analogue = m.group("analogue") == "a"
+                digital = not analogue
+
+                print(analogue, digital)
+
+                return True
+
+        return False

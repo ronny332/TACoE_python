@@ -9,6 +9,7 @@ config = {
         "home": os.path.join(os.path.expanduser("~"), ".config"),
         "name": "TACoE",
     },
+    "data": {"fifo_length": 100, "renew": 300, "save": 0},
     "debug": {"level": logging.DEBUG, "verbose": True},
     "fhem": {
         "alias": "CMI",
@@ -23,10 +24,9 @@ config = {
         "room": "devices->dummy",
         "timeout": 10,
     },
-    "data": {"renew": 300, "save": 300},
     "frame": {"bell": True, "debug": False},
     "shell": {"enabled": True},
-    "udp_server": {"cmi_ip": "10.0.0.46", "cmi_port": 5441, "fifo_length": 100, "udp_port": 5441},
+    "udp_server": {"cmi_ip": "10.0.0.46", "cmi_port": 5441, "udp_port": 5441},
 }
 
 

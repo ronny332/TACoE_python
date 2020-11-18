@@ -169,6 +169,8 @@ class Frame(object):
         Returns:
             string: from self.rawData
         """
+        if self.isEmpty():
+            return ""
 
         if verbose:
             return f"{datetime.datetime.fromtimestamp(self.timestamp)} " + "".join(
@@ -244,7 +246,11 @@ class Frame(object):
         Returns:
             bool: is empty or not
         """
-        return not any(self.rawData)
+        if hasattr(self, "payload"):
+            self.rawData = self.payload
+            delattr(self, "payload")
+
+        return not self.rawData or not isinstance(self.rawData, (bytearray, bytes)) or not any(self.rawData)
 
     def isMapped(self):
         """return False for first value mapping, True for second value mapping
@@ -434,7 +440,7 @@ class Frame(object):
 
         self.setNode(node)
 
-        if type is "analogue":
+        if type == "analogue":
             rawValue = self.get16BitIntFromAnalogueValue(value, decimals)
             (rawIndex, rawFrame) = self.getTupleForIndex(index, analogue=True)
 
@@ -462,7 +468,7 @@ class Frame(object):
         highByte = indexAsBits >> 8 & 0xFF
         lowByte = 0xFF & indexAsBits
 
-        if value is 1:
+        if value == 1:
             self.rawData[2] |= lowByte
             self.rawData[3] |= highByte
         else:

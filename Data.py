@@ -5,6 +5,7 @@ import os
 import pickle
 import threading
 
+from collections import deque
 from time import sleep, time
 
 from config import config
@@ -19,9 +20,9 @@ class Data(threading.Thread):
 
     __instance = None
 
-    config = {"analogue": {}, "digital": {}}
-    frames = None
+    data_frames = deque(maxlen=config["data"]["fifo_length"])
     last = {"analogue": {}, "digital": {}}
+    node_config = {"analogue": {}, "digital": {}}
     renewed = {}
     udp_server = None
 
@@ -40,10 +41,11 @@ class Data(threading.Thread):
         else:
             Data.__instance = self
 
+        f"Data initiated with fifo size of {self.data_frames.maxlen} frames."
+
     def initialize(self):
         """get needed instances from local classes"""
         self.udp_server = UDP_Server.UDP_Server.getInstance()
-        self.frames = self.udp_server.getFrames()
 
         self.restore()
         self.readConfig()
@@ -51,7 +53,7 @@ class Data(threading.Thread):
     def cleanFrames(self):
         """remove all available frames from RAM and harddrive"""
         self.clearLast()
-        self.frames.clear()
+        self.data_frames.clear()
         self.save()
 
     def clearLast(self):
@@ -115,6 +117,14 @@ class Data(threading.Thread):
         """
         return os.path.join(config["app"]["dir"], config["app"]["name"] + ".dump")
 
+    def getFrames(self):
+        """return frames object
+
+        Returns:
+            queue: frames object
+        """
+        return self.data_frames
+
     def getReadingsName(self, node, index, analogue=False, digital=False):
         """returns a matching Name, if existent
 
@@ -133,11 +143,11 @@ class Data(threading.Thread):
         sIndex = str(index)
 
         if (
-            sNode in self.config[type]
-            and sIndex in self.config[type][sNode]
-            and "name" in self.config[type][sNode][sIndex]
+            sNode in self.node_config[type]
+            and sIndex in self.node_config[type][sNode]
+            and "name" in self.node_config[type][sNode][sIndex]
         ):
-            return self.config[type][sNode][sIndex]["name"].replace(" ", "_")
+            return self.node_config[type][sNode][sIndex]["name"].replace(" ", "_")
 
         return False
 
@@ -169,7 +179,7 @@ class Data(threading.Thread):
         """
         data = {}
 
-        for f in self.frames:
+        for f in self.data_frames:
             if f.isAnalogue() and analogue:
                 node = f.getNode()
                 if node not in data:
@@ -194,9 +204,9 @@ class Data(threading.Thread):
         Returns:
             dictionary: dictionary with analogue representations
         """
-        data_analogue = copy.deepcopy(self.config["analogue"])
+        data_analogue = copy.deepcopy(self.node_config["analogue"])
 
-        for f in self.frames:
+        for f in self.data_frames:
             if f.isDigital():
                 continue
 
@@ -224,9 +234,9 @@ class Data(threading.Thread):
         Returns:
             dictionary: dictionary with digital representations
         """
-        data_digital = copy.deepcopy(self.config["digital"])
+        data_digital = copy.deepcopy(self.node_config["digital"])
 
-        for f in self.frames:
+        for f in self.data_frames:
             sNode = str(f.getNode())
             if str(sNode) in data_digital:
                 indexes = list(map(lambda i: f.getIndex(i, False), range(1, 17)))
@@ -248,11 +258,11 @@ class Data(threading.Thread):
 
         try:
             with open(fn, "r") as f:
-                self.config["analogue"] = json.load(f)
+                self.node_config["analogue"] = json.load(f)
 
             fn = config_digital
             with open(fn, "r") as f:
-                self.config["digital"] = json.load(f)
+                self.node_config["digital"] = json.load(f)
 
             logging.info(f"read config files {config_analogue} and {config_digital}")
 
@@ -263,25 +273,30 @@ class Data(threading.Thread):
         """restore saved data from disc, if existent"""
         if os.path.exists(self.getDumpFilename()):
             with open(self.getDumpFilename(), "rb") as f:
-                self.frames.clear()
-                frames = pickle.load(f)
+                self.data_frames.clear()
+                data_frames = filter(lambda df: not df.isEmpty(), pickle.load(f))
 
-                for f in frames:
-                    self.frames.append(f)
-                logging.debug(f"restored {len(self.frames)} frames from disc")
+                for df in data_frames:
+                    self.data_frames.append(df)
+                logging.debug(f"restored {len(self.data_frames)} frames from disc")
 
     def run(self):
         """run the Data thread"""
         while True:
-            sleep(config["data"]["save"])
-            self.save()
+            if int(config["data"]["save"]) > 0:
+                sleep(config["data"]["save"])
+                self.save()
+            else:
+                sleep(600)
+                logging.debug("No saving of frames to disc activate. Skipping.")
 
     def save(self):
         """save in memory data to disc"""
         with open(self.getDumpFilename(), "wb") as f:
-            pickle.dump(self.frames, f, protocol=pickle.HIGHEST_PROTOCOL)
+            data_frames_list = list((filter(lambda f: not f.isEmpty(), self.data_frames)))
+            pickle.dump(data_frames_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-            logging.debug(f"saved {len(self.frames)} frames to disc")
+            logging.debug(f"saved {len(data_frames_list)} frames to disc")
 
     def setFrames(self, frames):
         """sets the read/available frames data
@@ -289,4 +304,4 @@ class Data(threading.Thread):
         Args:
             frames (queue): frames data, read by UDP_Server
         """
-        self.frames = frames
+        self.data_frames = frames
