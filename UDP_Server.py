@@ -42,7 +42,7 @@ class UDP_Server(threading.Thread):
 
     def initialize(self):
         """get needed instances from local classes"""
-        self.data = Data.Data.getInstance()
+        self.data_frames = Data.Data.getInstance().getFrames()
         self.fhem = FHEM.FHEM.getInstance()
 
     def run(self):
