@@ -288,7 +288,7 @@ class Data(threading.Thread):
                 self.save()
             else:
                 sleep(600)
-                logging.debug("No saving of frames to disc activate. Skipping.")
+                logging.debug("No saving of frames to disc activated. Skipping.")
 
     def save(self):
         """save in memory data to disc"""

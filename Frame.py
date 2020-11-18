@@ -246,10 +246,6 @@ class Frame(object):
         Returns:
             bool: is empty or not
         """
-        # remove later TODO
-        if hasattr(self, "payload"):
-            self.rawData = self.payload
-            delattr(self, "payload")
 
         return not self.rawData or not isinstance(self.rawData, (bytearray, bytes)) or not any(self.rawData)
 

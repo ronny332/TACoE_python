@@ -9,6 +9,13 @@ config = {
         "home": os.path.join(os.path.expanduser("~"), ".config"),
         "name": "TACoE",
     },
+    "control": {
+        "enabled": True,
+        "prompt": " > ",
+        "shell": True,
+        "telnet": True,
+        "telnet_port": 11112,
+    },
     "data": {"fifo_length": 100, "renew": 300, "save": 0},
     "debug": {"level": logging.DEBUG, "verbose": True},
     "fhem": {
@@ -25,7 +32,6 @@ config = {
         "timeout": 10,
     },
     "frame": {"bell": True, "debug": False},
-    "shell": {"enabled": True},
     "udp_server": {"cmi_ip": "10.0.0.46", "cmi_port": 5441, "udp_port": 5441},
 }
 
