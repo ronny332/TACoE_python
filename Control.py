@@ -67,19 +67,20 @@ class Control(threading.Thread):
             write_to_stream(
                 "\n".join(
                     [
-                        "help:",
-                        "  a\t[analogue] all analogue values (JSON)",
-                        "  d\t[digital] all digital values (JSON)",
-                        "  ar\t[analogue] all analogue raw values (JSON)",
-                        "  da\t[diff analogue] differences of analogue values since last call (JSON)",
-                        "  dd\t[diff digital] differences of digital values since last call (JSON)",
-                        "  dr\t[digital] all digital raw values (JSON)",
-                        "  f\t[frames] show all available frames",
-                        "  h\t[help] tshow this help",
-                        "  lf\t[last frame):\t\tshow last frame",
-                        "  r\t[restore] restore saved frames",
-                        "  s\t[send] send command",
-                        "  w\t[write] write available frames to disc",
+                        "Command         [long command] Description",
+                        "----------------------------------------------------------------------",
+                        "  a\t\t[analogue] all analogue values (JSON)",
+                        "  d\t\t[digital] all digital values (JSON)",
+                        "  ar\t\t[analogue] all analogue raw values (JSON)",
+                        "  da\t\t[diff analogue] differences of analogue values since last call (JSON)",
+                        "  dd\t\t[diff digital] differences of digital values since last call (JSON)",
+                        "  dr\t\t[digital] all digital raw values (JSON)",
+                        "  f\t\t[frames] show all available frames",
+                        "  h\t\t[help] tshow this help",
+                        "  lf\t\t[last frame):\t\tshow last frame",
+                        "  r\t\t[restore] restore saved frames",
+                        "  s\t\t[send] send command",
+                        "  w\t\t[write] write available frames to disc",
                     ]
                 )
             )
