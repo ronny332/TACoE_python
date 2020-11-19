@@ -49,22 +49,22 @@ class Control(threading.Thread):
         self.data = Data.Data.getInstance()
         self.data_frames = self.data.getFrames()
 
-    def command(self, cmd, write_to_stream):
+    def command(self, cmd, output):
         """command switcher
 
         Args:
             cmd (str): command to run
-            write_to_stream ([func): function to write output to
+            output ([func): function to write output to
         """
         if cmd in ["q", "quit"]:
             res = "quit."
-            if write_to_stream is print:
+            if output is print:
                 print(res)
                 os._exit(0)
             else:
-                write_to_stream(res)
+                output(res)
         elif cmd in ["h", "help"]:
-            write_to_stream(
+            output(
                 "\n".join(
                     [
                         "Command         [long command] Description",
@@ -86,42 +86,42 @@ class Control(threading.Thread):
             )
         elif len(self.data_frames) > 0:
             if cmd in ["a", "analogue"]:
-                write_to_stream(json.dumps(self.data.getValues(analogue=True)))
+                output(json.dumps(self.data.getValues(analogue=True)))
             elif cmd in ["c", "clean"]:
                 self.data.cleanFrames()
-                write_to_stream("OK.")
+                output("OK.")
             elif cmd in ["d", "digital"]:
-                write_to_stream(json.dumps(self.data.getValues(digital=True)))
+                output(json.dumps(self.data.getValues(digital=True)))
             elif cmd in ["da", "diff analogue"]:
-                write_to_stream(json.dumps(self.data.getDifference(analogue=True)))
+                output(json.dumps(self.data.getDifference(analogue=True)))
             elif cmd in ["dd", "diff digital"]:
-                write_to_stream(json.dumps(self.data.getDifference(digital=True)))
+                output(json.dumps(self.data.getDifference(digital=True)))
             elif cmd in ["ar", "analogue raw"]:
-                write_to_stream(json.dumps(self.data.getRawValues(analogue=True)))
+                output(json.dumps(self.data.getRawValues(analogue=True)))
             elif cmd in ["dr", "digital raw"]:
-                write_to_stream(json.dumps(self.data.getRawValues(digital=True)))
+                output(json.dumps(self.data.getRawValues(digital=True)))
             elif cmd in ["f", "frames"]:
                 for f in reversed(self.data_frames):
-                    write_to_stream(f.getString(verbose=True))
-                write_to_stream(f"({len(self.data_frames)} frames)")
+                    output(f.getString(verbose=True))
+                output(f"({len(self.data_frames)} frames)")
             elif cmd in ["lf", "last frame"]:
-                write_to_stream(f"{self.data_frames[-1].getString(verbose=True)}")
+                output(f"{self.data_frames[-1].getString(verbose=True)}")
             elif cmd in ["r", "restore"]:
                 self.data.restore()
-                write_to_stream("OK.")
+                output("OK.")
             elif cmd.startswith("s ") or cmd.startswith("send "):
                 try:
                     self.send(cmd)
-                    write_to_stream("OK.")
+                    output("OK.")
                 except ValueError as e:
-                    write_to_stream(e)
+                    output(e)
             elif cmd in ["w", "write"]:
                 self.data.save()
-                write_to_stream("OK.")
+                output("OK.")
             else:
-                write_to_stream("invalid command.")
+                output("invalid command.")
         else:
-            write_to_stream("no frames, need to wait for new input.")
+            output("no frames, need to wait for new input.")
 
     def run(self):
         """run the Control thread"""
@@ -153,7 +153,7 @@ class Control(threading.Thread):
                 while True:
                     conn, _ = s.accept()
 
-                    def write_to_stream(res):
+                    def output(res):
                         if res:
                             if res == "quit.":
                                 conn.send((res + "\r\n").encode())
@@ -170,7 +170,7 @@ class Control(threading.Thread):
                         if not data:
                             conn.close()
 
-                        self.command(data.decode("utf-8").strip(), write_to_stream)
+                        self.command(data.decode("utf-8").strip(), output)
         except Exception as e:
             logging.error(e)
 
