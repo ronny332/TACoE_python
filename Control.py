@@ -26,6 +26,7 @@ class Control(threading.Thread):
     data = None
     data_frames = None
     executor = futures.ThreadPoolExecutor(max_workers=2)
+    udp_server = None
 
     @staticmethod
     def getInstance():
@@ -48,6 +49,7 @@ class Control(threading.Thread):
         """get needed instances from local classes"""
         self.data = Data.Data.getInstance()
         self.data_frames = self.data.getFrames()
+        self.udp_server = UDP_Server.UDP_Server.getInstance()
 
     def command(self, cmd, output):
         """command switcher
@@ -76,8 +78,10 @@ class Control(threading.Thread):
                         "  dd\t\t[diff digital] differences of digital values since last call (JSON)",
                         "  dr\t\t[digital] all digital raw values (JSON)",
                         "  f\t\t[frames] show all available frames",
+                        "  fs\t\t[frames short] show all available frames, verbose off",
                         "  h\t\t[help] tshow this help",
                         "  lf\t\t[last frame):\t\tshow last frame",
+                        "  lfs\t\t[last frame short):\t\tshow last frame, verbose off",
                         "  r\t\t[restore] restore saved frames",
                         "  s\t\t[send] send command",
                         "  w\t\t[write] write available frames to disc",
@@ -104,8 +108,15 @@ class Control(threading.Thread):
                 for f in reversed(self.data_frames):
                     output(f.getString(verbose=True))
                 output(f"({len(self.data_frames)} frames)")
+
+            elif cmd in ["fs", "frames short"]:
+                for f in reversed(self.data_frames):
+                    output(f.getString(verbose=False))
+                output(f"({len(self.data_frames)} frames)")
             elif cmd in ["lf", "last frame"]:
                 output(f"{self.data_frames[-1].getString(verbose=True)}")
+            elif cmd in ["lfs", "last frame short"]:
+                output(f"{self.data_frames[-1].getString(verbose=False)}")
             elif cmd in ["r", "restore"]:
                 self.data.restore()
                 output("OK.")
@@ -190,12 +201,23 @@ class Control(threading.Thread):
         if self.cmds["send"]:
             m = self.cmds["send"].match(cmd)
             if m:
-                print(m.groupdict())
-
                 analogue = m.group("analogue") == "a"
                 digital = not analogue
 
-                print(analogue, digital)
+                try:
+                    f = Frame()
+                    f.setValue(
+                        int(m.group("node")),
+                        int(m.group("index")),
+                        m.group("aValue") if analogue else int(m.group("dValue")),
+                        decimals=int(m.group("decimals")) if analogue else False,
+                        analogue=analogue,
+                        digital=digital,
+                    )
+                    self.udp_server.sendFrame(f)
+                except Exception as e:
+                    logging.error(e)
+                    return False
 
                 return True
 

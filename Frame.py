@@ -418,7 +418,6 @@ class Frame(object):
             type = "analogue"
             if isinstance(value, str):
                 value = float(value)
-
             if index not in range(1, 17):
                 raise ValueError("index has to be between 1 and 16 for analogue frames.")
             if int(value) not in range(pow(2, 16)):
