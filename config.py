@@ -14,6 +14,7 @@ config = {
         "prompt": " > ",
         "shell": True,
         "telnet": True,
+        "telnet_host": "127.0.0.1",
         "telnet_port": 11112,
     },
     "data": {"fifo_length": 100, "renew": 300, "save": 0},

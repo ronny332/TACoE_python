@@ -143,9 +143,12 @@ class Control(threading.Thread):
     def run_telnet(self):
         """telnet thread"""
         try:
-            with socket.create_server(("", config["control"]["telnet_port"])) as s:
+            with socket.create_server((config["control"]["telnet_host"], config["control"]["telnet_port"])) as s:
                 s.listen(1)
-                logging.debug("Control/Telnet initialized, listening on port udp://:" + str(config["control"]["telnet_port"]) + ".")
+                logging.debug(
+                    "Control/Telnet initialized, listening on port udp://%s:%d."
+                    % (config["control"]["telnet_host"], config["control"]["telnet_port"])
+                )
 
                 while True:
                     conn, _ = s.accept()
